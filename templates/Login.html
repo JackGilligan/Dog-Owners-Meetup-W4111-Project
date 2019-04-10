@@ -1,0 +1,47 @@
+
+<!-- saved from url=(0020)http://0.0.0.0:8111/ -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style>
+    body{ 
+      font-size: 15pt;
+      font-family: arial;
+    }
+  </style>
+
+
+</head><body>
+  <h1>WELCOME!</h1>
+<h3>Returning User? Sign In!</h3>
+  
+
+  
+
+
+
+<form method="POST" action="http://0.0.0.0:8111/login">
+<p>Email: <input type="text" name="email"> <input type="submit" value="Sign In">
+
+</p></form>
+
+<br>
+    
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+    	{% for message in messages %}
+    		<h3>{{message}}<!--3-->
+    	{% endfor %}
+    {% endif %}
+{% endwith %}
+
+<br>
+    
+
+</h3><h3>New User?</h3> 
+<p><a href="http://0.0.0.0:8111/EnterInfo">Sign Up!</a></p>
+    
+
+
+
+
+
+
+</body></html>
