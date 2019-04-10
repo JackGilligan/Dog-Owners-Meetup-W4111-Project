@@ -180,9 +180,31 @@ def index():
 def EnterInfo():
   return render_template("EnterInfo.html")
 
-@app.route('/Home')
-def Home():
-  return render_template("index.html")
+@app.route('/locations')
+def locations():
+    locations = []
+    cursor = g.conn.execute("SELECT L.name, L.address, tmp.num_meetings FROM (SELECT OM.location_id, COUNT(*) as num_meetings FROM owner_meet as OM GROUP BY OM.location_id) as tmp LEFT JOIN location as L ON tmp.location_id = L.location_id ORDER BY tmp.num_meetings DESC LIMIT 5;")
+    for result in cursor:
+      locations.append(result)
+    cursor.close()
+    context = dict(data = locations)
+    return render_template("Locations.html", **context)
+
+@app.route('/messages')
+def messages():
+    global person_id
+    messages = []
+    cursor = g.conn.execute("SELECT O1.name, O2.name, OC.message, OC.time FROM owner_contact as OC LEFT JOIN owner as O1 ON OC.sender=O1.owner_id LEFT JOIN owner as O2 ON OC.receiver=O2.owner_id WHERE (OC.sender = '" + person_id + "' or OC.receiver = '" + person_id + "') ORDER BY OC.time;")
+    for result in cursor:
+      messages.append(result)
+    cursor.close()
+    context = dict(data = messages)
+    return render_template("Messages.html", **context)
+    
+
+#@app.route('/Home')
+#def Home():
+#  return render_template("index.html")
 
 
 # Example of adding new data to the database
