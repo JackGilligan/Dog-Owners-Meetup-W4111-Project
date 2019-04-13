@@ -1,16 +1,21 @@
-
 <!-- saved from url=(0108)file:///Users/jackgilligan/Documents/Databases%20w4111/Proj3_Pt3/project1-s19/webserver/templates/index.html -->
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style>
-    body{ 
+<html>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <style>
+    body {
       font-size: 15pt;
       font-family: arial;
     }
   </style>
 
 
-</head><body>
+</head>
+
+<body>
   <h1>Popular Meeting Locations:</h1>
-    <br>
+  <br>
   <div>
     {% for n in data %}
     <div>{{n}}</div>
@@ -18,7 +23,9 @@
   </div>
 
 
-<p><a href="http://0.0.0.0:8111/">Home</a></p>
+  <p><a href="/">Home</a></p>
 
 
-</body></html>
+</body>
+
+</html>

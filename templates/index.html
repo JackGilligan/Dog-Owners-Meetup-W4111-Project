@@ -1,27 +1,32 @@
+<html>
 
-<!-- saved from url=(0108)file:///Users/jackgilligan/Documents/Databases%20w4111/Proj3_Pt3/project1-s19/webserver/templates/index.html -->
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style>
-    body{ 
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <style>
+    body {
       font-size: 15pt;
       font-family: arial;
     }
   </style>
 
 
-</head><body>
+</head>
+
+<body>
   <h1>Your Top Matches:</h1>
-    <br>
+  <br>
   <div>
     {% for n in data %}
     <div>{{n}}</div>
     {% endfor %}
   </div>
 
-<p><a href="http://0.0.0.0:8111/messages">My Messages</a></p>
-    <br>
-<p><a href="http://0.0.0.0:8111/locations">Suggested Locations</a></p>
-    <br>
-<p><a href="http://0.0.0.0:8111/logout">Log Off</a></p>
+  <p><a href="/messages">My Messages</a></p>
+  <br>
+  <p><a href="/locations">Suggested Locations</a></p>
+  <br>
+  <p><a href="/logout">Log Off</a></p>
 
+</body>
 
-</body></html>
+</html>
