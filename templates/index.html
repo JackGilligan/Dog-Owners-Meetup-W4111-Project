@@ -10,6 +10,7 @@
 <body>
 
   <h1>Welcome to Puppy Pals!</h1>
+  <p class="lead">Find the best playdate for you and your dog.</p>
   <p>
     <a href="/">Home</a> |
     <a href="/matches">Matches</a> |
@@ -34,6 +35,7 @@
   {{ row|safe }}
   {% endfor %}
 
+  <h2>Update Your Dog Profiles</h2>
   <h3>Add a Dog</h3>
   <form method="POST" action="/add_dog">
     <p>Dog ID: <input type="number" name="dog_id"></p>

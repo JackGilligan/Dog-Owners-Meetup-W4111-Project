@@ -11,6 +11,7 @@
 <body>
 
     <h1>Welcome to Puppy Pals!</h1>
+    <p class="lead">Find the best playdate for you and your dog.</p>
     <p>
         <a href="/">Home</a> |
         <a href="/matches">Matches</a> |
@@ -25,6 +26,13 @@
   {% for row in data %}
   {{ row|safe }}
   {% endfor %}
+
+  <h3>Send a Message</h3>
+  <form method="POST" action="/add_message">
+    <p>Recipient Email: <input type="text" name="receiver"></p>
+    <p>Message: <input type="text" name="message"></p>
+    <input class="btn btn-primary" type="submit" value="Send Message">
+  </form>
 
 </body>
 

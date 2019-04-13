@@ -381,6 +381,42 @@ def add_dog():
   return redirect('/')
 
 
+# Example of adding new data to the database
+@app.route('/add_message', methods=['POST'])
+def add_message():
+
+  cursor = g.conn.execute(
+    """
+    SELECT owner.owner_id
+    FROM owner
+    WHERE owner.email = %(receiver)s;
+    """,
+    receiver=request.form['receiver']
+  )
+
+  df_receiver = pd.DataFrame(cursor.fetchall())
+  df_receiver.columns = cursor.keys()
+  receiver_id = df_receiver.owner_id.iloc[0]
+  cursor.close()
+
+  print receiver_id
+
+  g.conn.execute(
+    """
+    INSERT INTO
+      owner_contact(contact_id, sender, receiver, time, message)
+    VALUES
+      (%(contact_id)s, %(sender)s, %(receiver)s, %(time)s, %(message)s);
+    """,
+    contact_id=str(pd.Timestamp('now').strftime("%Y%m%d%H%M%S")),
+    sender=session['person_id'],
+    time=pd.Timestamp('now').strftime("%Y-%m-%d %H:%M:%S"),
+    receiver=receiver_id,
+    message=request.form['message']
+  )
+  
+  return redirect('/messages')
+
 @app.route('/login', methods=['POST'])
 def login():
 
@@ -429,7 +465,7 @@ def login():
 @app.route('/logout')
 def logout():
     session['logged_in'] = False
-    flash(session['person_name'] + ', you are now logged out. See you again soon!')
+    flash('You are now logged out ' + session['person_name'] + '. See you again soon!')
     return redirect('/')
 
 
