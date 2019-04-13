@@ -16,6 +16,8 @@ Read about it online.
 """
 
 import os
+import pandas as pd
+
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
 from flask import Flask, request, render_template, g, redirect, Response, session, flash
@@ -143,11 +145,20 @@ def index():
       LIMIT 10
       """
     )
-    names = []
-    for result in cursor:
-      names.append(result)  # can also be accessed using result[0]
+
+    #names = []
+    #for result in cursor:
+    #  names.append(result)  # can also be accessed using result[0]
+    #cursor.close()
+
+    df = pd.DataFrame(cursor.fetchall())
+    df.columns = cursor.keys()
     cursor.close()
-    context = dict(data = names)
+
+    context = dict(
+      table = [df.to_html(classes='table', header="true")]
+    )
+
     return render_template("index.html", **context)
 
 #
@@ -224,7 +235,7 @@ def login():
 @app.route('/logout')
 def logout():
     session['logged_in'] = False
-    flash(person_name + ', You Are Now Logged Out')
+    flash(person_name + ', you are now logged out. See you again soon!')
     return redirect('/')
 
 

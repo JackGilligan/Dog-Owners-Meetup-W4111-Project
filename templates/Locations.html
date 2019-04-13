@@ -3,18 +3,14 @@
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <style>
-    body {
-      font-size: 15pt;
-      font-family: arial;
-    }
-  </style>
-
-
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
 </head>
 
 <body>
-  <h1>Popular Meeting Locations:</h1>
+  <h1>Welcome to Dog Meetup!</h1>
+  <h2>Popular Meeting Locations:</h2>
   <br>
   <div>
     {% for n in data %}
@@ -23,7 +19,12 @@
   </div>
 
 
+  <h2>Links</h2>
   <p><a href="/">Home</a></p>
+  <p><a href="/messages">Messages</a></p>
+  <p><a href="/locations">Locations</a></p>
+  <p><a href="/logout">Log Out</a></p>
+
 
 
 </body>

@@ -3,21 +3,23 @@
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <style>
-    body {
-      font-size: 15pt;
-      font-family: arial;
-    }
-  </style>
-
-
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
 </head>
 
 <body>
-  <h1>WELCOME!</h1>
-  <h3>Returning User? Sign In!</h3>
+  <h1>Welcome to Dog Meetup!</h1>
 
+  {% with messages = get_flashed_messages() %}
+  {% if messages %}
+  {% for message in messages %}
+  <p>{{message}}</p>
+  {% endfor %}
+  {% endif %}
+  {% endwith %}
 
+  <h2>Returning User? Sign In!</h2>
   <form method="POST" action="/login">
     <p>
       Email: <input type="text" name="email"><input type="submit" value="Sign In">
@@ -26,21 +28,8 @@
 
   <br>
 
-  {% with messages = get_flashed_messages() %}
-  {% if messages %}
-  {% for message in messages %}
-  <h3>{{message}}
-
-    {% endfor %}
-    {% endif %}
-    {% endwith %}
-    <br>
-
-
-  </h3>
-  <h3>New User?</h3>
+  <h2>New User? Sign Up</h2>
   <p><a href="/EnterInfo">Sign Up!</a></p>
-
 
 </body>
 
