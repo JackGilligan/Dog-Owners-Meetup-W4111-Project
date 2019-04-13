@@ -18,7 +18,7 @@ Read about it online.
 import os
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
-from flask import Flask, request, render_template, g, redirect, Response
+from flask import Flask, request, render_template, g, redirect, Response, session, flash
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
@@ -36,11 +36,9 @@ app = Flask(__name__, template_folder=tmpl_dir)
 # For your convenience, we already set it to the class database
 
 # Use the DB credentials you received by e-mail
-DB_USER = "jmg2338"
-DB_PASSWORD = "09AcAIiCnF"
-
+DB_USER = "ms5488"
+DB_PASSWORD = "ihtXu8PHsp"
 DB_SERVER = "w4111.cisxo09blonu.us-east-1.rds.amazonaws.com"
-
 DATABASEURI = "postgresql://"+DB_USER+":"+DB_PASSWORD+"@"+DB_SERVER+"/w4111"
 
 
@@ -50,12 +48,9 @@ DATABASEURI = "postgresql://"+DB_USER+":"+DB_PASSWORD+"@"+DB_SERVER+"/w4111"
 engine = create_engine(DATABASEURI)
 
 
-# Here we create a test table and insert some values in it
+# Here we create a test table and insert some values into it
 engine.execute("""DROP TABLE IF EXISTS test;""")
-engine.execute("""CREATE TABLE IF NOT EXISTS test (
-  id serial,
-  name text
-);""")
+engine.execute("""CREATE TABLE IF NOT EXISTS test (id serial, name text);""")
 engine.execute("""INSERT INTO test(name) VALUES ('grace hopper'), ('alan turing'), ('ada lovelace');""")
 
 
@@ -101,6 +96,10 @@ def teardown_request(exception):
 # see for routing: http://flask.pocoo.org/docs/0.10/quickstart/#routing
 # see for decorators: http://simeonfranklin.com/blog/2012/jul/1/python-decorators-in-12-steps/
 #
+
+person_id = 0
+person_name = "JJ"
+
 @app.route('/')
 def index():
   """
@@ -113,53 +112,41 @@ def index():
   See its API: http://flask.pocoo.org/docs/0.10/api/#incoming-request-data
   """
 
-  # DEBUG: this is debugging code to see what request looks like
+  # debugging
+  print '\n'
+  print "REQUEST ARGUMENTS:"
   print request.args
+
+  print '\n'
+  print "SESSION ARGUMENTS:"
+  print session.get('logged_in')
 
 
   #
   # example of a database query
   #
-  cursor = g.conn.execute("SELECT name FROM test")
-  names = []
-  for result in cursor:
-    names.append(result['name'])  # can also be accessed using result[0]
-  cursor.close()
+  if not session.get('logged_in'):
+    return render_template("Login.html")
+  else:
 
-  #
-  # Flask uses Jinja templates, which is an extension to HTML where you can
-  # pass data to a template and dynamically generate HTML based on the data
-  # (you can think of it as simple PHP)
-  # documentation: https://realpython.com/blog/python/primer-on-jinja-templating/
-  #
-  # You can see an example template in templates/index.html
-  #
-  # context are the variables that are passed to the template.
-  # for example, "data" key in the context variable defined below will be 
-  # accessible as a variable in index.html:
-  #
-  #     # will print: [u'grace hopper', u'alan turing', u'ada lovelace']
-  #     <div>{{data}}</div>
-  #     
-  #     # creates a <div> tag for each element in data
-  #     # will print: 
-  #     #
-  #     #   <div>grace hopper</div>
-  #     #   <div>alan turing</div>
-  #     #   <div>ada lovelace</div>
-  #     #
-  #     {% for n in data %}
-  #     <div>{{n}}</div>
-  #     {% endfor %}
-  #
-  context = dict(data = names)
-
-
-  #
-  # render_template looks in the templates/ folder for files.
-  # for example, the below file reads template/index.html
-  #
-  return render_template("index.html", **context)
+    cursor = g.conn.execute(
+      """
+      SELECT
+        O.picture, D.picture1, D.picture2, D.name, D.breed,
+        D.age, D.weight, D.play_intensity, O.phone, O.email
+      FROM
+        owner O
+        LEFT JOIN dog_owned_by DOB on O.owner_id = DOB.owner_id
+        LEFT JOIN dog D on DOB.dog_id = D.dog_id
+      LIMIT 10
+      """
+    )
+    names = []
+    for result in cursor:
+      names.append(result)  # can also be accessed using result[0]
+    cursor.close()
+    context = dict(data = names)
+    return render_template("index.html", **context)
 
 #
 # This is an example of a different path.  You can see it at
@@ -169,9 +156,35 @@ def index():
 # notice that the function name is another() rather than index()
 # the functions for each app.route needs to have different names
 #
-@app.route('/another')
-def another():
-  return render_template("EnterInfo.htm")
+@app.route('/EnterInfo')
+def EnterInfo():
+  return render_template("EnterInfo.html")
+
+@app.route('/locations')
+def locations():
+    locations = []
+    cursor = g.conn.execute("SELECT L.name, L.address, tmp.num_meetings FROM (SELECT OM.location_id, COUNT(*) as num_meetings FROM owner_meet as OM GROUP BY OM.location_id) as tmp LEFT JOIN location as L ON tmp.location_id = L.location_id ORDER BY tmp.num_meetings DESC LIMIT 5;")
+    for result in cursor:
+      locations.append(result)
+    cursor.close()
+    context = dict(data = locations)
+    return render_template("Locations.html", **context)
+
+@app.route('/messages')
+def messages():
+    global person_id
+    messages = []
+    cursor = g.conn.execute("SELECT O1.name, O2.name, OC.message, OC.time FROM owner_contact as OC LEFT JOIN owner as O1 ON OC.sender=O1.owner_id LEFT JOIN owner as O2 ON OC.receiver=O2.owner_id WHERE (OC.sender = '" + person_id + "' or OC.receiver = '" + person_id + "') ORDER BY OC.time;")
+    for result in cursor:
+      messages.append(result)
+    cursor.close()
+    context = dict(data = messages)
+    return render_template("Messages.html", **context)
+    
+
+#@app.route('/Home')
+#def Home():
+#  return render_template("index.html")
 
 
 # Example of adding new data to the database
@@ -179,15 +192,39 @@ def another():
 def add():
   name = request.form['name']
   print name
-  cmd = 'INSERT INTO test(name) VALUES (:name1), (:name2)';
-  g.conn.execute(text(cmd), name1 = name, name2 = name);
+  cmd = 'INSERT INTO test(name) VALUES (:name1)';
+  g.conn.execute(text(cmd), name1 = name);
   return redirect('/')
 
 
-@app.route('/login')
+@app.route('/login', methods=['POST'])
 def login():
-    abort(401)
-    this_is_never_executed()
+    global person_id
+    global person_name
+    login_credential = request.form['email']
+    cursor = g.conn.execute("SELECT email FROM owner")
+    emails = []
+    for result in cursor:
+      emails.append(result['email'])  # can also be accessed using result[0]
+    cursor.close()
+    if login_credential in emails:
+      cursor = g.conn.execute("SELECT owner_id, name FROM owner WHERE email = " + "'" + str(login_credential) + "'")
+      for result2 in cursor:
+        person_id = result2[0][0]
+        person_name = result2['name']
+      cursor.close()
+      session['logged_in'] = True
+      return redirect('/')
+    else:
+      flash('Email Not Recognized')
+      return redirect('/')
+
+@app.route('/logout')
+def logout():
+    session['logged_in'] = False
+    flash(person_name + ', You Are Now Logged Out')
+    return redirect('/')
+
 
 
 if __name__ == "__main__":
@@ -213,6 +250,7 @@ if __name__ == "__main__":
 
     HOST, PORT = host, port
     print "running on %s:%d" % (HOST, PORT)
+    app.secret_key = os.urandom(12)
     app.run(host=HOST, port=PORT, debug=debug, threaded=threaded)
 
 
