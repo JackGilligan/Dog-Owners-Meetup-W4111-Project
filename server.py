@@ -231,12 +231,30 @@ def messages():
 
 
 # Example of adding new data to the database
-@app.route('/add', methods=['POST'])
-def add():
-  name = request.form['name']
-  print name
-  cmd = 'INSERT INTO test(name) VALUES (:name1)';
-  g.conn.execute(text(cmd), name1 = name);
+@app.route('/add_dog', methods=['POST'])
+def add_dog():
+
+  g.conn.execute(
+    """
+    INSERT INTO
+      dog(dog_id, name, age, weight, breed, play_intensity, picture1, picture2)
+    VALUES
+      (%(dog_id)s, %(name)s, %(age)s, %(weight)s, %(breed)s, %(intensity)s, %(picture1)s, %(picture2)s);
+    """,
+    request.form
+  )
+
+  g.conn.execute(
+    """
+    INSERT INTO
+      dog_owned_by(dog_id, owner_id)
+    VALUES
+      (%(dog_id)s, %(owner_id)s);
+    """,
+    dog_id=request.form['dog_id'],
+    owner_id=session['person_id']
+  )
+
   return redirect('/')
 
 
@@ -268,7 +286,7 @@ def login():
       )
 
       for result2 in cursor:
-        person_id = result2[0][0]
+        person_id = result2[0]
         person_name = result2['name']
         session['person_id'] = person_id
         session['person_name'] = person_name
@@ -302,18 +320,6 @@ if __name__ == "__main__":
   @click.argument('HOST', default='0.0.0.0')
   @click.argument('PORT', default=8111, type=int)
   def run(debug, threaded, host, port):
-    """
-    This function handles command line parameters.
-    Run the server using
-
-        python server.py
-
-    Show the help text using
-
-        python server.py --help
-
-    """
-
     HOST, PORT = host, port
     print "running on %s:%d" % (HOST, PORT)
     app.secret_key = os.urandom(12)
