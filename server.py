@@ -160,9 +160,7 @@ def locations():
 
     print '\n'
     print "SESSION ARGUMENTS:"
-    print person_id
-    print person_name
-    print session.get('logged_in')
+    print session
 
     cursor = g.conn.execute(
       """
@@ -199,9 +197,7 @@ def messages():
 
     print '\n'
     print "SESSION ARGUMENTS:"
-    print person_id
-    print person_name
-    print session.get('logged_in')
+    print session
 
     messages = []
     cursor = g.conn.execute(
@@ -216,7 +212,7 @@ def messages():
         OC.receiver = %s
       ORDER BY OC.time;
       """,
-      (person_id, person_id)
+      (session['person_id'], session['person_id'])
     )
 
     df = pd.DataFrame(cursor.fetchall())
@@ -292,7 +288,7 @@ def login():
 @app.route('/logout')
 def logout():
     session['logged_in'] = False
-    flash(person_name + ', you are now logged out. See you again soon!')
+    flash(session['person_name'] + ', you are now logged out. See you again soon!')
     return redirect('/')
 
 
