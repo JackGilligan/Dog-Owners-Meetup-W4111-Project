@@ -131,9 +131,27 @@ def index():
     df_dog.columns = cursor.keys()
     cursor.close()
 
+    cursor = g.conn.execute(
+      """
+      SELECT
+        O.review_id, O.positive, O.feedback
+      FROM
+        owner_review O
+      WHERE
+        O.reviewee = %s
+      LIMIT 10
+      """,
+      session['person_id']
+    )
+
+    df_review = pd.DataFrame(cursor.fetchall())
+    df_review.columns = cursor.keys()
+    cursor.close()
+
     context = dict(
       owner_data = [df_owner.to_html(classes='table', header="true", index=False)],
       dog_data = [df_dog.to_html(classes='table', header="true", index=False)],
+      review_data = [df_review.to_html(classes='table', header="true", index=False)]
     )
 
     return render_template("index.html", **context)
@@ -150,30 +168,14 @@ def index():
 def EnterInfo():
     return render_template("EnterInfo.html")
 
-@app.route('/locations')
-def locations():
 
-    # debugging
-    print '\n'
-    print "REQUEST ARGUMENTS:"
-    print request.args
-
-    print '\n'
-    print "SESSION ARGUMENTS:"
-    print session
+@app.route('/matches')
+def matches():
 
     cursor = g.conn.execute(
       """
-      SELECT L.name, L.address, tmp.num_meetings
-      FROM 
-        (
-          SELECT OM.location_id, COUNT(*) as num_meetings
-          FROM owner_meet as OM
-          GROUP BY OM.location_id
-        ) as tmp
-        LEFT JOIN location as L ON tmp.location_id = L.location_id
-      ORDER BY tmp.num_meetings DESC
-      LIMIT 5;
+      SELECT *
+      FROM dog
       """
     )
 
@@ -185,7 +187,8 @@ def locations():
       data = [df.to_html(classes='table', header="true", index=False)]
     )
 
-    return render_template("Locations.html", **context)
+    return render_template("Matches.html", **context)
+
 
 @app.route('/messages')
 def messages():
@@ -225,9 +228,64 @@ def messages():
     return render_template("Messages.html", **context)
     
 
-#@app.route('/Home')
-#def Home():
-#  return render_template("index.html")
+@app.route('/locations')
+def locations():
+
+    # debugging
+    print '\n'
+    print "REQUEST ARGUMENTS:"
+    print request.args
+
+    print '\n'
+    print "SESSION ARGUMENTS:"
+    print session
+
+    cursor = g.conn.execute(
+      """
+      SELECT L.name, L.address, tmp.num_meetings
+      FROM 
+        (
+          SELECT OM.location_id, COUNT(*) as num_meetings
+          FROM owner_meet as OM
+          GROUP BY OM.location_id
+        ) as tmp
+        LEFT JOIN location as L ON tmp.location_id = L.location_id
+      ORDER BY tmp.num_meetings DESC
+      LIMIT 5;
+      """
+    )
+
+    df = pd.DataFrame(cursor.fetchall())
+    df.columns = cursor.keys()
+    cursor.close()
+
+    context = dict(
+      data = [df.to_html(classes='table', header="true", index=False)]
+    )
+
+    return render_template("Locations.html", **context)
+
+
+@app.route('/playdates')
+def playdates():
+
+    cursor = g.conn.execute(
+      """
+      SELECT *
+      FROM owner_meet
+      """
+    )
+
+    df = pd.DataFrame(cursor.fetchall())
+    df.columns = cursor.keys()
+    cursor.close()
+
+    context = dict(
+      data = [df.to_html(classes='table', header="true", index=False)]
+    )
+
+    return render_template("Playdates.html", **context)
+
 
 
 # Example of adding new data to the database

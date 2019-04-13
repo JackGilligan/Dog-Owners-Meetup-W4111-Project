@@ -4,44 +4,51 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
     integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
 </head>
 
 <body>
-  <div class="content">
 
-    <h1>Welcome to Dog Meetup!</h1>
-    <p>
-      <a href="/">Home</a> |
-      <a href="/messages">Messages</a> |
-      <a href="/locations">Locations</a> |
-      <a href="/logout">Log Out</a>
-    </p>
+  <h1>Welcome to Dog Meetup!</h1>
+  <p>
+    <a href="/">Home</a> |
+    <a href="/matches">Matches</a> |
+    <a href="/messages">Messages</a> |
+    <a href="/locations">Locations</a> |
+    <a href="/playdates">Playdates</a> |
+    <a href="/logout">Log Out</a>
+  </p>
 
-    <h2>Your Personal Profile</h2>
-    {% for row in owner_data %}
-    {{ row|safe }}
-    {% endfor %}
+  <h2>Your Personal Profile</h2>
+  {% for row in owner_data %}
+  {{ row|safe }}
+  {% endfor %}
 
-    <h2>Your Pet Profiles</h2>
-    <br>
-    {% for row in dog_data %}
-    {{ row|safe }}
-    {% endfor %}
+  <h2>Your Dog Profiles</h2>
 
-    <form method="POST" action="/add_dog">
-      <p>Dog ID: <input type="number" name="dog_id"></p>
-      <p>Dog Name: <input type="text" name="name"></p>
-      <p>Dog Age: <input type="number" name="age"></p>
-      <p>Dog Weight: <input type="number" name="weight"></p>
-      <p>Dog Breed: <input type="text" name="breed"></p>
-      <p>Dog Play Intensity (1 - 10): <input type="number" name="intensity"></p>
-      <p>Dog Picture Link 1: <input type="text" name="picture1"></p>
-      <p>Dog Picture Link 2: <input type="text" name="picture2"></p>
-      <input type="submit" value="Add Dog">
-    </form>
+  <h3>Existing Dogs</h3>
+  {% for row in dog_data %}
+  {{ row|safe }}
+  {% endfor %}
 
-  </div>
+  <h3>Add a Dog</h3>
+  <form method="POST" action="/add_dog">
+    <p>Dog ID: <input type="number" name="dog_id"></p>
+    <p>Dog Name: <input type="text" name="name"></p>
+    <p>Dog Age: <input type="number" name="age"></p>
+    <p>Dog Weight: <input type="number" name="weight"></p>
+    <p>Dog Breed: <input type="text" name="breed"></p>
+    <p>Dog Play Intensity (1 - 10): <input type="number" name="intensity"></p>
+    <p>Dog Picture Link 1: <input type="text" name="picture1"></p>
+    <p>Dog Picture Link 2: <input type="text" name="picture2"></p>
+    <input type="submit" value="Add Dog">
+  </form>
+
+  <h2>Your Reviews</h2>
+  {% for row in review_data %}
+  {{ row|safe }}
+  {% endfor %}
+
 </body>
 
 </html>
