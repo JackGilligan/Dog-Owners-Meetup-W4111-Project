@@ -123,8 +123,9 @@ def index():
 
   print '\n'
   print "SESSION ARGUMENTS:"
+  print person_id
+  print person_name
   print session.get('logged_in')
-
 
   #
   # example of a database query
@@ -154,9 +155,8 @@ def index():
     df = pd.DataFrame(cursor.fetchall())
     df.columns = cursor.keys()
     cursor.close()
-
     context = dict(
-      table = [df.to_html(classes='table', header="true")]
+      data = [df.to_html(classes='table', header="true", index=False)]
     )
 
     return render_template("index.html", **context)
@@ -176,7 +176,20 @@ def EnterInfo():
 @app.route('/locations')
 def locations():
     locations = []
-    cursor = g.conn.execute("SELECT L.name, L.address, tmp.num_meetings FROM (SELECT OM.location_id, COUNT(*) as num_meetings FROM owner_meet as OM GROUP BY OM.location_id) as tmp LEFT JOIN location as L ON tmp.location_id = L.location_id ORDER BY tmp.num_meetings DESC LIMIT 5;")
+    cursor = g.conn.execute(
+      """
+      SELECT L.name, L.address, tmp.num_meetings
+      FROM 
+        (
+          SELECT OM.location_id, COUNT(*) as num_meetings
+          FROM owner_meet as OM
+          GROUP BY OM.location_id
+        ) as tmp
+        LEFT JOIN location as L ON tmp.location_id = L.location_id
+      ORDER BY tmp.num_meetings DESC
+      LIMIT 5;
+      """
+    )
     for result in cursor:
       locations.append(result)
     cursor.close()
@@ -185,13 +198,41 @@ def locations():
 
 @app.route('/messages')
 def messages():
-    global person_id
+
+    # debugging
+    print '\n'
+    print "REQUEST ARGUMENTS:"
+    print request.args
+
+    print '\n'
+    print "SESSION ARGUMENTS:"
+    print person_id
+    print person_name
+    print session.get('logged_in')
+
     messages = []
-    cursor = g.conn.execute("SELECT O1.name, O2.name, OC.message, OC.time FROM owner_contact as OC LEFT JOIN owner as O1 ON OC.sender=O1.owner_id LEFT JOIN owner as O2 ON OC.receiver=O2.owner_id WHERE (OC.sender = '" + person_id + "' or OC.receiver = '" + person_id + "') ORDER BY OC.time;")
-    for result in cursor:
-      messages.append(result)
+    cursor = g.conn.execute(
+      """
+      SELECT OC.time, O1.name as sender, O2.name as receiver, OC.message
+      FROM
+        owner_contact as OC
+        LEFT JOIN owner as O1 ON OC.sender = O1.owner_id
+        LEFT JOIN owner as O2 ON OC.receiver = O2.owner_id
+      WHERE 
+        OC.sender = %s or
+        OC.receiver = %s
+      ORDER BY OC.time;
+      """,
+      (person_id, person_id)
+    )
+
+    df = pd.DataFrame(cursor.fetchall())
+    df.columns = cursor.keys()
     cursor.close()
-    context = dict(data = messages)
+    context = dict(
+      data = [df.to_html(classes='table', header="true", index=False)]
+    )
+
     return render_template("Messages.html", **context)
     
 

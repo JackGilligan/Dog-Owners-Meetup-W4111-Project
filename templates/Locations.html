@@ -10,22 +10,22 @@
 
 <body>
   <h1>Welcome to Dog Meetup!</h1>
-  <h2>Popular Meeting Locations:</h2>
+  <p>
+      <a href="/">Home</a> |
+      <a href="/messages">Messages</a> |
+      <a href="/locations">Locations</a> |
+      <a href="/logout">Log Out</a> |
+  </p>
+
+
+  <h2>Locations</h2>
+  <p>A list of popular nearby meeting locations!</p>
   <br>
   <div>
     {% for n in data %}
     <div>{{n}}</div>
     {% endfor %}
   </div>
-
-
-  <h2>Links</h2>
-  <p><a href="/">Home</a></p>
-  <p><a href="/messages">Messages</a></p>
-  <p><a href="/locations">Locations</a></p>
-  <p><a href="/logout">Log Out</a></p>
-
-
 
 </body>
 

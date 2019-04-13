@@ -9,21 +9,20 @@
 </head>
 
 <body>
+
   <h1>Welcome to Dog Meetup!</h1>
-  <h2>Your Recent Messages:</h2>
-  <br>
-  <div>
-    {% for n in data %}
-    <div>{{n}}</div>
-    {% endfor %}
-  </div>
+  <p>
+    <a href="/">Home</a> |
+    <a href="/messages">Messages</a> |
+    <a href="/locations">Locations</a> |
+    <a href="/logout">Log Out</a> |
+  </p>
 
-
-  <h2>Links</h2>
-  <p><a href="/">Home</a></p>
-  <p><a href="/messages">Messages</a></p>
-  <p><a href="/locations">Locations</a></p>
-  <p><a href="/logout">Log Out</a></p>
+  <h2>Messages</h2>
+  <p>A table of all of your recent messages.</p>
+  {% for row in data %}
+  {{ row|safe }}
+  {% endfor %}
 
 </body>
 
