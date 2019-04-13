@@ -9,7 +9,7 @@
 
 <body>
 
-  <h1>Welcome to Dog Meetup!</h1>
+  <h1>Welcome to Puppy Pals!</h1>
   <p>
       <a href="/">Home</a> |
       <a href="/matches">Matches</a> |
@@ -19,9 +19,15 @@
       <a href="/logout">Log Out</a> 
   </p>
 
-  <h2>Matches</h2>
+  <h2>Your Preferences</h2>
+  <p>Your playmate preferences.</p>
+  {% for row in preference_data %}
+  {{ row|safe }}
+  {% endfor %}
+
+  <h2>Your Matches</h2>
   <p>Nearby dogs that meet your playdate preferences.</p>
-  {% for row in data %}
+  {% for row in match_data %}
   {{ row|safe }}
   {% endfor %}
 

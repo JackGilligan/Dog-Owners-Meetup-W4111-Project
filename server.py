@@ -146,7 +146,7 @@ def index():
 
     df_review = pd.DataFrame(cursor.fetchall())
     df_review.columns = cursor.keys()
-    cursor.close()
+    cursor.close() 
 
     context = dict(
       owner_data = [df_owner.to_html(classes='table', header="true", index=False)],
@@ -174,17 +174,82 @@ def matches():
 
     cursor = g.conn.execute(
       """
+      WITH
+        owner_preferences AS (
+          SELECT 
+            preference.age_min,
+            preference.age_max,
+            preference.weight_min,
+            preference.weight_max,
+            preference.play_intensity_min,
+            preference.play_intensity_max
+          FROM
+            preference
+            LEFT JOIN preference_set_by ON preference.preference_id = preference_set_by.preference_id
+          WHERE
+            preference_set_by.owner_id = %(person_id)s
+        )
       SELECT *
-      FROM dog
-      """
+      FROM owner_preferences
+      """,
+      person_id=session['person_id']
     )
 
-    df = pd.DataFrame(cursor.fetchall())
-    df.columns = cursor.keys()
+    df_preferences  = pd.DataFrame(cursor.fetchall())
+    df_preferences.columns = cursor.keys()
+    cursor.close()
+
+    cursor = g.conn.execute(
+      """
+      WITH
+        owner_preferences AS (
+          SELECT 
+            preference.age_min,
+            preference.age_max,
+            preference.weight_min,
+            preference.weight_max,
+            preference.play_intensity_min,
+            preference.play_intensity_max
+          FROM
+            preference
+            LEFT JOIN preference_set_by ON preference.preference_id = preference_set_by.preference_id
+          WHERE
+            preference_set_by.owner_id = %(person_id)s
+        )
+      SELECT
+        owner.owner_id,
+        owner.name,
+        owner.phone,
+        owner.email,
+        dog.dog_id,
+        dog.name,
+        dog.age,
+        dog.weight,
+        dog.breed,
+        dog.play_intensity
+      FROM
+        dog
+        CROSS JOIN owner_preferences
+        LEFT JOIN dog_owned_by on dog.dog_id = dog_owned_by.dog_id
+        LEFT JOIN owner on dog_owned_by.owner_id = owner.owner_id
+      WHERE 
+        (dog.age >= owner_preferences.age_min) AND
+        (dog.age <= owner_preferences.age_max) AND
+        (dog.weight >= owner_preferences.weight_min) AND
+        (dog.weight <= owner_preferences.weight_max) AND 
+        (dog.play_intensity >= owner_preferences.play_intensity_min) AND
+        (dog.play_intensity <= owner_preferences.play_intensity_max);
+      """,
+      person_id=session['person_id']
+    )
+
+    df_matches = pd.DataFrame(cursor.fetchall())
+    df_matches.columns = cursor.keys()
     cursor.close()
 
     context = dict(
-      data = [df.to_html(classes='table', header="true", index=False)]
+      preference_data = [df_preferences.to_html(classes='table', header="true", index=False)],
+      match_data = [df_matches.to_html(classes='table', header="true", index=False)]
     )
 
     return render_template("Matches.html", **context)

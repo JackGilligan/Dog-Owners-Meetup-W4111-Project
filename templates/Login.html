@@ -9,7 +9,7 @@
 </head>
 
 <body>
-  <h1>Welcome to Dog Meetup!</h1>
+  <h1>Welcome to Puppy Pals!</h1>
 
   {% with messages = get_flashed_messages() %}
   {% if messages %}
@@ -21,15 +21,13 @@
 
   <h2>Returning User? Sign In!</h2>
   <form method="POST" action="/login">
-    <p>
-      Email: <input type="text" name="email"><input type="submit" value="Sign In">
-    </p>
+    <p>Email: <input type="text" name="email"></p>
+    <input class="btn btn-primary", type="submit" value="Sign In">
   </form>
 
-  <br>
-
-  <h2>New User? Sign Up</h2>
-  <p><a href="/EnterInfo">Sign Up!</a></p>
+  <h2>New User? Sign Up!</h2>
+  <p>Signing up only takes a few minutes - join today!</p>
+  <p><a href="/EnterInfo" class="btn btn-primary">Sign Up!</a></p>
 
 </body>
 

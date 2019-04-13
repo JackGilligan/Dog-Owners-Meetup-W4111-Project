@@ -11,54 +11,45 @@
 
 <body>
 
-  <h1>Welcome to Dog Meetup!</h1>
+  <h1>Welcome to Puppy Pals!</h1>
 
   <h2>Sign Up</h2>
 
-  <h3>Personal and Dog Information</h3>
-  <p>Enter info about you and your dog to help us match you with other playmates!</p>
+  <form method="POST" action="/add"></form>
 
-  <form method="POST" action="/add">
+  <h3>Personal Profiles</h3>
+  <p>Enter info about you to help us match you with other playmates!</p>
 
-    <p>Your Name: <input type="text" name="name"> <input type="submit" value="Add"></p>
-    <p>Phone: <input type="text" name="phone"> <input type="submit" value="Add"></p>
-    <p>Email: <input type="text" name="email"> <input type="submit" value="Add"></p>
-    <p>Picture of You: <input type="text" name="picture"> <input type="submit" value="Add"></p>
-    <p>Dog Name: <input type="text" name="dname"> <input type="submit" value="Add"></p>
-    <p>Dog Age: <input type="number" name="age"> <input type="submit" value="Add"></p>
-    <p>Dog Weight: <input type="number" name="weight"> <input type="submit" value="Add"></p>
-    <p>Dog Breed: <input type="text" name="breed"> <input type="submit" value="Add"></p>
-    <p>Dog Play Intensity (1-10): <input type="number" name="play_intensity" min="1" max="10"> <input type="submit"
-        value="Add"></p>
-    <p>Picture of Your Dog (1): <input type="text" name="picture1"> <input type="submit" value="Add"></p>
-    <p>Picture of Your Dog (2): <input type="text" name="picture2"> <input type="submit" value="Add"></p>
+  <p>Your Name: <input type="text" name="name"></p>
+  <p>Phone: <input type="text" name="phone"></p>
+  <p>Email: <input type="text" name="email"></p>
+  <p>Picture of You: <input type="text" name="picture"></p>
 
-  </form>
+  <h3>Dog Profile Profile</h3>
+  <p>Enter info about your dog to help us match you with other playmates!</p>
 
-  <h3>Playmate Preference Information</h3>
+  <p>Dog Name: <input type="text" name="dname"></p>
+  <p>Dog Age: <input type="number" name="age"></p>
+  <p>Dog Weight: <input type="number" name="weight"></p>
+  <p>Dog Breed: <input type="text" name="breed"></p>
+  <p>Dog Play Intensity (1-10): <input type="number" name="play_intensity" min="1" max="10"></p>
+  <p>Picture of Your Dog (1): <input type="text" name="picture1"></p>
+  <p>Picture of Your Dog (2): <input type="text" name="picture2"></p>
+
+  <h3>Playmate Preferences</h3>
   <p>Help us find your dog the perfect playmate!</p>
 
-  <form method="POST" action="/add">
+  <p>Age Min: <input type="number" name="agemin"></p>
+  <p>Age Max: <input type="number" name="agemax"></p>
+  <p>Weight Min: <input type="number" name="wgtmin"></p>
+  <p>Weight Max: <input type="number" name="wgtmax"></p>
+  <p>Play Intensity Min (1-10): <input type="number" name="pimin" min="1" max="10"></p>
+  <p>Play Intensity Max (1-10): <input type="number" name="pimax" min="1" max="10"></p>
+  <p>Playdate Duration: <input type="number" name="playdate_duration"></p>
+  
+  <input class="btn btn-primary" type="submit" value="Sign Up!">
 
-    <p>Age Min: <input type="number" name="agemin"> <input type="submit" value="Add"></p>
-
-    <p>Age Max: <input type="number" name="agemax"> <input type="submit" value="Add"></p>
-
-    <p>Weight Min: <input type="number" name="wgtmin"> <input type="submit" value="Add"></p>
-
-    <p>Weight Max: <input type="number" name="wgtmax"> <input type="submit" value="Add"></p>
-
-    <p>Play Intensity Min (1-10): <input type="number" name="pimin" min="1" max="10"> <input type="submit" value="Add">
-    </p>
-
-    <p>Play Intensity Max (1-10): <input type="number" name="pimax" min="1" max="10"> <input type="submit" value="Add">
-    </p>
-
-    <p>Playdate Duration: <input type="number" name="playdate_duration"> <input type="submit" value="Add"></p>
-
-    <p><a href="/">Sign Up!</a></p>
-
-  </form>
+</form>
 
 </body>
 

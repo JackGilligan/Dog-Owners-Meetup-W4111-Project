@@ -9,7 +9,7 @@
 
 <body>
 
-  <h1>Welcome to Dog Meetup!</h1>
+  <h1>Welcome to Puppy Pals!</h1>
   <p>
     <a href="/">Home</a> |
     <a href="/matches">Matches</a> |
@@ -25,9 +25,12 @@
   {% endfor %}
 
   <h2>Your Dog Profiles</h2>
-
-  <h3>Existing Dogs</h3>
   {% for row in dog_data %}
+  {{ row|safe }}
+  {% endfor %}
+
+  <h2>Your Reviews</h2>
+  {% for row in review_data %}
   {{ row|safe }}
   {% endfor %}
 
@@ -38,16 +41,11 @@
     <p>Dog Age: <input type="number" name="age"></p>
     <p>Dog Weight: <input type="number" name="weight"></p>
     <p>Dog Breed: <input type="text" name="breed"></p>
-    <p>Dog Play Intensity (1 - 10): <input type="number" name="intensity"></p>
+    <p>Dog Play Intensity (1 - 10): <input type="number" name="intensity" min="1" max="10"></p>
     <p>Dog Picture Link 1: <input type="text" name="picture1"></p>
     <p>Dog Picture Link 2: <input type="text" name="picture2"></p>
-    <input type="submit" value="Add Dog">
+    <input class="btn btn-primary" type="submit" value="Add Dog">
   </form>
-
-  <h2>Your Reviews</h2>
-  {% for row in review_data %}
-  {{ row|safe }}
-  {% endfor %}
 
 </body>
 
