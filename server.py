@@ -36,11 +36,13 @@ app = Flask(__name__, template_folder=tmpl_dir)
 # For your convenience, we already set it to the class database
 
 # Use the DB credentials you received by e-mail
+
+# DB_USER = "jmg2338"
+# DB_PASSWORD = "09AcAIiCnF"
 DB_USER = "ms5488"
 DB_PASSWORD = "ihtXu8PHsp"
 DB_SERVER = "w4111.cisxo09blonu.us-east-1.rds.amazonaws.com"
 DATABASEURI = "postgresql://"+DB_USER+":"+DB_PASSWORD+"@"+DB_SERVER+"/w4111"
-
 
 #
 # This line creates a database engine that knows how to connect to the URI above
