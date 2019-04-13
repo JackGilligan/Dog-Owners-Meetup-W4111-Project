@@ -15,12 +15,17 @@
       <a href="/">Home</a> |
       <a href="/messages">Messages</a> |
       <a href="/locations">Locations</a> |
-      <a href="/logout">Log Out</a> |
+      <a href="/logout">Log Out</a>
     </p>
 
-    <h2>Your Top Matches:</h2>
+    <h2>Your Personal Profile</h2>
+    {% for row in owner_data %}
+    {{ row|safe }}
+    {% endfor %}
+
+    <h2>Your Pet Profiles</h2>
     <br>
-    {% for row in data %}
+    {% for row in dog_data %}
     {{ row|safe }}
     {% endfor %}
 

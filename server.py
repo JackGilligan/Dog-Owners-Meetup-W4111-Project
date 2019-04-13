@@ -25,39 +25,21 @@ from flask import Flask, request, render_template, g, redirect, Response, sessio
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
 
-
-
-# XXX: The Database URI should be in the format of: 
-#
-#     postgresql://USER:PASSWORD@<IP_OF_POSTGRE_SQL_SERVER>/<DB_NAME>
-#
-# For example, if you had username ewu2493, password foobar, then the following line would be:
-#
-#     DATABASEURI = "postgresql://ewu2493:foobar@<IP_OF_POSTGRE_SQL_SERVER>/postgres"
-#
-# For your convenience, we already set it to the class database
-
-# Use the DB credentials you received by e-mail
-
 # DB_USER = "jmg2338"
 # DB_PASSWORD = "09AcAIiCnF"
 DB_USER = "ms5488"
 DB_PASSWORD = "ihtXu8PHsp"
 DB_SERVER = "w4111.cisxo09blonu.us-east-1.rds.amazonaws.com"
 DATABASEURI = "postgresql://"+DB_USER+":"+DB_PASSWORD+"@"+DB_SERVER+"/w4111"
-
-#
-# This line creates a database engine that knows how to connect to the URI above
-#
 engine = create_engine(DATABASEURI)
-
 
 # Here we create a test table and insert some values into it
 engine.execute("""DROP TABLE IF EXISTS test;""")
 engine.execute("""CREATE TABLE IF NOT EXISTS test (id serial, name text);""")
 engine.execute("""INSERT INTO test(name) VALUES ('grace hopper'), ('alan turing'), ('ada lovelace');""")
 
-
+default_person_id = 0
+default_person_name = "Anonymous"
 
 @app.before_request
 def before_request():
@@ -86,24 +68,6 @@ def teardown_request(exception):
   except Exception as e:
     pass
 
-
-#
-# @app.route is a decorator around index() that means:
-#   run index() whenever the user tries to access the "/" path using a GET request
-#
-# If you wanted the user to go to e.g., localhost:8111/foobar/ with POST or GET then you could use
-#
-#       @app.route("/foobar/", methods=["POST", "GET"])
-#
-# PROTIP: (the trailing / in the path is important)
-# 
-# see for routing: http://flask.pocoo.org/docs/0.10/quickstart/#routing
-# see for decorators: http://simeonfranklin.com/blog/2012/jul/1/python-decorators-in-12-steps/
-#
-
-person_id = 0
-person_name = "JJ"
-
 @app.route('/')
 def index():
   """
@@ -123,40 +87,53 @@ def index():
 
   print '\n'
   print "SESSION ARGUMENTS:"
-  print person_id
-  print person_name
-  print session.get('logged_in')
+  print session
 
-  #
-  # example of a database query
-  #
   if not session.get('logged_in'):
+
     return render_template("Login.html")
+
   else:
 
     cursor = g.conn.execute(
       """
       SELECT
-        O.picture, D.picture1, D.picture2, D.name, D.breed,
-        D.age, D.weight, D.play_intensity, O.phone, O.email
+        O.name, O.phone, O.email, O.picture
+      FROM
+        owner O
+      WHERE
+        O.owner_id = %s
+      LIMIT 10
+      """,
+      session['person_id']
+    )
+
+    df_owner = pd.DataFrame(cursor.fetchall())
+    df_owner.columns = cursor.keys()
+    cursor.close()
+
+    cursor = g.conn.execute(
+      """
+      SELECT
+        D.name, D.breed, D.age, D.weight, D.play_intensity, D.picture1, D.picture2
       FROM
         owner O
         LEFT JOIN dog_owned_by DOB on O.owner_id = DOB.owner_id
         LEFT JOIN dog D on DOB.dog_id = D.dog_id
+      WHERE
+        O.owner_id = %s
       LIMIT 10
-      """
+      """,
+      session['person_id']
     )
 
-    #names = []
-    #for result in cursor:
-    #  names.append(result)  # can also be accessed using result[0]
-    #cursor.close()
-
-    df = pd.DataFrame(cursor.fetchall())
-    df.columns = cursor.keys()
+    df_dog = pd.DataFrame(cursor.fetchall())
+    df_dog.columns = cursor.keys()
     cursor.close()
+
     context = dict(
-      data = [df.to_html(classes='table', header="true", index=False)]
+      owner_data = [df_owner.to_html(classes='table', header="true", index=False)],
+      dog_data = [df_dog.to_html(classes='table', header="true", index=False)],
     )
 
     return render_template("index.html", **context)
@@ -171,11 +148,22 @@ def index():
 #
 @app.route('/EnterInfo')
 def EnterInfo():
-  return render_template("EnterInfo.html")
+    return render_template("EnterInfo.html")
 
 @app.route('/locations')
 def locations():
-    locations = []
+
+    # debugging
+    print '\n'
+    print "REQUEST ARGUMENTS:"
+    print request.args
+
+    print '\n'
+    print "SESSION ARGUMENTS:"
+    print person_id
+    print person_name
+    print session.get('logged_in')
+
     cursor = g.conn.execute(
       """
       SELECT L.name, L.address, tmp.num_meetings
@@ -190,10 +178,15 @@ def locations():
       LIMIT 5;
       """
     )
-    for result in cursor:
-      locations.append(result)
+
+    df = pd.DataFrame(cursor.fetchall())
+    df.columns = cursor.keys()
     cursor.close()
-    context = dict(data = locations)
+
+    context = dict(
+      data = [df.to_html(classes='table', header="true", index=False)]
+    )
+
     return render_template("Locations.html", **context)
 
 @app.route('/messages')
@@ -253,23 +246,46 @@ def add():
 
 @app.route('/login', methods=['POST'])
 def login():
-    global person_id
-    global person_name
+
     login_credential = request.form['email']
-    cursor = g.conn.execute("SELECT email FROM owner")
+
+    cursor = g.conn.execute(
+      """
+      SELECT email FROM owner
+      """
+    )
+
     emails = []
     for result in cursor:
       emails.append(result['email'])  # can also be accessed using result[0]
     cursor.close()
+
     if login_credential in emails:
-      cursor = g.conn.execute("SELECT owner_id, name FROM owner WHERE email = " + "'" + str(login_credential) + "'")
+
+      cursor = g.conn.execute(
+        """
+        SELECT owner_id, name
+        FROM owner
+        WHERE email = %s
+        """,
+        (login_credential)
+      )
+
       for result2 in cursor:
         person_id = result2[0][0]
         person_name = result2['name']
+        session['person_id'] = person_id
+        session['person_name'] = person_name
+
       cursor.close()
+
       session['logged_in'] = True
       return redirect('/')
+
     else:
+
+      session['person_id'] = default_person_id
+      session['person_name'] = default_person_name
       flash('Email Not Recognized')
       return redirect('/')
 

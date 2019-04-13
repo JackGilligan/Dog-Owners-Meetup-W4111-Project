@@ -19,13 +19,10 @@
 
 
   <h2>Locations</h2>
-  <p>A list of popular nearby meeting locations!</p>
-  <br>
-  <div>
-    {% for n in data %}
-    <div>{{n}}</div>
-    {% endfor %}
-  </div>
+  <p>Popular nearby meeting locations.</p>
+  {% for row in data %}
+  {{ row|safe }}
+  {% endfor %}
 
 </body>
 
