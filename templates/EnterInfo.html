@@ -15,41 +15,55 @@
 
   <h2>Sign Up</h2>
 
-  <form method="POST" action="/add"></form>
+  {% with messages = get_flashed_messages() %}
+  {% if messages %}
+  {% for message in messages %}
+  <p>{{message}}</p>
+  {% endfor %}
+  {% endif %}
+  {% endwith %}
 
-  <h3>Personal Profiles</h3>
-  <p>Enter info about you to help us match you with other playmates!</p>
+  <br>
 
-  <p>Your Name: <input type="text" name="name"></p>
-  <p>Phone: <input type="text" name="phone"></p>
-  <p>Email: <input type="text" name="email"></p>
-  <p>Picture of You: <input type="text" name="picture"></p>
+  <form method="POST" action="/add_profile">
 
-  <h3>Dog Profile Profile</h3>
-  <p>Enter info about your dog to help us match you with other playmates!</p>
+    <h3>Personal Profile</h3>
+    <p>Enter info about you to help us match you with other dog owners!</p>
 
-  <p>Dog Name: <input type="text" name="dname"></p>
-  <p>Dog Age: <input type="number" name="age"></p>
-  <p>Dog Weight: <input type="number" name="weight"></p>
-  <p>Dog Breed: <input type="text" name="breed"></p>
-  <p>Dog Play Intensity (1-10): <input type="number" name="play_intensity" min="1" max="10"></p>
-  <p>Picture of Your Dog (1): <input type="text" name="picture1"></p>
-  <p>Picture of Your Dog (2): <input type="text" name="picture2"></p>
+    <p>Your Name: <input type="text" name="name"></p>
+    <p>Phone: <input type="text" name="phone"></p>
+    <p>Email: <input type="text" name="email"></p>
+    <p>Picture of You: <input type="text" name="picture"></p>
 
-  <h3>Playmate Preferences</h3>
-  <p>Help us find your dog the perfect playmate!</p>
+    <br>
 
-  <p>Age Min: <input type="number" name="agemin"></p>
-  <p>Age Max: <input type="number" name="agemax"></p>
-  <p>Weight Min: <input type="number" name="wgtmin"></p>
-  <p>Weight Max: <input type="number" name="wgtmax"></p>
-  <p>Play Intensity Min (1-10): <input type="number" name="pimin" min="1" max="10"></p>
-  <p>Play Intensity Max (1-10): <input type="number" name="pimax" min="1" max="10"></p>
-  <p>Playdate Duration: <input type="number" name="playdate_duration"></p>
-  
-  <input class="btn btn-primary" type="submit" value="Sign Up!">
+    <h3>Dog Profile</h3>
+    <p>Enter info about your dog to help us match you with playmates!</p>
 
-</form>
+    <p>Dog Name: <input type="text" name="dname"></p>
+    <p>Dog Age: <input type="number" name="age" min="0"></p>
+    <p>Dog Weight: <input type="number" name="weight" min = "1"></p>
+    <p>Dog Breed: <input type="text" name="breed"></p>
+    <p>Dog Play Intensity (1-10): <input type="number" name="play_intensity" min="1" max="10"></p>
+    <p>Picture of Your Dog (1): <input type="text" name="picture1"></p>
+    <p>Picture of Your Dog (2): <input type="text" name="picture2"></p>
+
+    <br>
+
+    <h3>Playmate Preferences</h3>
+    <p>Help us find your dog the perfect playmate!</p>
+
+    <p>Age Min: <input type="number" name="agemin" min = "0"></p>
+    <p>Age Max: <input type="number" name="agemax" min = "0"></p>
+    <p>Weight Min: <input type="number" name="wgtmin" min = "0"></p>
+    <p>Weight Max: <input type="number" name="wgtmax" min = "0"></p>
+    <p>Play Intensity Min (1-10): <input type="number" name="pimin" min="1" max="10"></p>
+    <p>Play Intensity Max (1-10): <input type="number" name="pimax" min="1" max="10"></p>
+    <p>Playdate Duration (minutes): <input type="number" name="playdate_duration" min="10"></p>
+    <br>
+    <input class="btn btn-primary" type="submit" value="Sign Up!">
+
+  </form>
 
 </body>
 

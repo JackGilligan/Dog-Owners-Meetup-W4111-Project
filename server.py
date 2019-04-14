@@ -94,9 +94,7 @@ def index():
     return render_template("Login.html")
 
   else:
-
-    cursor = g.conn.execute(
-      """
+    q = """
       SELECT
         O.name, O.phone, O.email, O.picture
       FROM
@@ -104,9 +102,8 @@ def index():
       WHERE
         O.owner_id = %s
       LIMIT 10
-      """,
-      session['person_id']
-    )
+      """
+    cursor = g.conn.execute(q, [session['person_id']])
 
     df_owner = pd.DataFrame(cursor.fetchall())
     df_owner.columns = cursor.keys()
@@ -144,16 +141,18 @@ def index():
       session['person_id']
     )
 
-    df_review = pd.DataFrame(cursor.fetchall())
-    df_review.columns = cursor.keys()
-    cursor.close() 
+    if cursor.rowcount > 0:
+      df_review = pd.DataFrame(cursor.fetchall())
+      df_review.columns = cursor.keys()
+    else:
+      df_review = pd.DataFrame(columns=['review_id', 'positive', 'feedback'])
+    cursor.close()
 
     context = dict(
       owner_data = [df_owner.to_html(classes='table', header="true", index=False)],
       dog_data = [df_dog.to_html(classes='table', header="true", index=False)],
       review_data = [df_review.to_html(classes='table', header="true", index=False)]
     )
-
     return render_template("index.html", **context)
 
 #
@@ -195,8 +194,11 @@ def matches():
       person_id=session['person_id']
     )
 
-    df_preferences  = pd.DataFrame(cursor.fetchall())
-    df_preferences.columns = cursor.keys()
+    if cursor.rowcount > 0:
+      df_preferences  = pd.DataFrame(cursor.fetchall())
+      df_preferences.columns = cursor.keys()
+    else:
+      df_preferences = pd.Dataframe(columns = ['age_min','age_max','weight_min', 'weight_max', 'play_intensity_min', 'play_intensity_max'])
     cursor.close()
 
     cursor = g.conn.execute(
@@ -243,8 +245,11 @@ def matches():
       person_id=session['person_id']
     )
 
-    df_matches = pd.DataFrame(cursor.fetchall())
-    df_matches.columns = cursor.keys()
+    if cursor.rowcount > 0:
+      df_matches = pd.DataFrame(cursor.fetchall())
+      df_matches.columns = cursor.keys()
+    else:
+      df_matches = pd.Dataframe(columns = ['owner_id','name','phone','email','dog_id','name', 'age', 'weight', 'breed', 'play_intensity'])
     cursor.close()
 
     context = dict(
@@ -282,9 +287,11 @@ def messages():
       """,
       (session['person_id'], session['person_id'])
     )
-
-    df = pd.DataFrame(cursor.fetchall())
-    df.columns = cursor.keys()
+    if cursor.rowcount > 0:
+      df = pd.DataFrame(cursor.fetchall())
+      df.columns = cursor.keys()
+    else:
+      df = pd.DataFrame(columns=['time', 'sender', 'receiver', 'message'])
     cursor.close()
     context = dict(
       data = [df.to_html(classes='table', header="true", index=False)]
@@ -334,15 +341,18 @@ def locations():
 @app.route('/playdates')
 def playdates():
 
-    cursor = g.conn.execute(
-      """
+    q = """
       SELECT *
       FROM owner_meet
+      WHERE owner_meet.scheduler = %s OR owner_meet.schedulee = %s
       """
-    )
+    cursor = g.conn.execute(q, [session['person_id'], session['person_id']])
 
-    df = pd.DataFrame(cursor.fetchall())
-    df.columns = cursor.keys()
+    if cursor.rowcount > 0:
+      df = pd.DataFrame(cursor.fetchall())
+      df.columns = cursor.keys()
+    else:
+      df = pd.DataFrame(cursor.fetchall())
     cursor.close()
 
     context = dict(
@@ -351,6 +361,170 @@ def playdates():
 
     return render_template("Playdates.html", **context)
 
+
+# Example of adding new data to the database
+@app.route('/add_profile', methods=['POST'])
+def add_profile():
+
+  owner_id = 0
+  dog_id = 0
+  preference_id = 0
+  
+  # New owner_id
+  cursor = g.conn.execute(
+      """
+      SELECT owner_id FROM owner ORDER BY cast(owner_id as integer) DESC LIMIT 1
+      """
+    )
+  
+  for result in cursor:
+    owner_id = str(int(result[0]) + 1)
+  cursor.close()
+
+  # New dog_id
+  cursor = g.conn.execute(
+      """
+      SELECT dog_id FROM dog ORDER BY cast(dog_id as integer) DESC LIMIT 1
+      """
+    )
+  
+  for result2 in cursor:
+    dog_id = str(int(result2[0]) + 1)
+  cursor.close()
+
+  # New preference_id
+  cursor = g.conn.execute(
+      """
+      SELECT preference_id FROM preference ORDER BY cast(preference_id as integer) DESC LIMIT 1
+      """
+    )
+  
+  for result3 in cursor:
+    preference_id = str(int(result3[0]) + 1)
+  cursor.close()
+
+  print(owner_id, dog_id, preference_id)
+
+  # Email List
+  emails = []
+  cursor = g.conn.execute(
+      """
+      SELECT email FROM owner
+      """
+    )
+  
+  for result in cursor:
+    emails.append(result[0])
+  cursor.close()
+
+  # Check Input
+  name = request.form['name']
+  phone = request.form['phone']
+  email = request.form['email']
+  picture = request.form['picture']
+
+  dname = request.form['dname']
+  age = request.form['age']
+  weight = request.form['weight']
+  breed = request.form['breed']
+  play_intensity = request.form['play_intensity']
+  picture1 = request.form['picture1']
+  picture2 = request.form['picture2']
+
+  age_min = request.form['agemin']
+  age_max = request.form['agemax']
+  weight_min = request.form['wgtmin']
+  weight_max = request.form['wgtmax']
+  play_intensity_min = request.form['pimin']
+  play_intensity_max = request.form['pimax']
+  playdate_duration = request.form['playdate_duration']
+
+  if name == "":
+    flash('Please enter your name!')
+    return redirect('/EnterInfo')
+  elif email == "":
+    flash("Please enter your email!")
+    return redirect('/EnterInfo')
+  elif picture == "":
+    flash("Please add a picture of yourself!")
+    return redirect('/EnterInfo')
+  elif email in emails:
+    flash('Profile already exists for this email. Please log in with your email!')
+    return redirect('/EnterInfo')
+  elif dname == "":
+    flash("Please enter your dog's name!")
+    return redirect('/EnterInfo')
+  elif age == "":
+    flash("Please enter your dog's age!")
+    return redirect('/EnterInfo')
+  elif weight == "":
+    flash("Please enter your dog's weight!")
+    return redirect('/EnterInfo')
+  elif picture1 == "":
+    flash("Please add a picture in Picture (1)!")
+    return redirect('/EnterInfo')
+  elif age_max < age_min:
+    flash("Age Max must be larger than Age Min!")
+    return redirect('/EnterInfo')
+  elif weight_max < weight_min:
+    flash("Weight Max must be larger than Weight Min!")
+    return redirect('/EnterInfo')
+  elif play_intensity_max < play_intensity_min:
+    flash(" Play Intensity Max must be larger than Play Intensity Min!")
+    return redirect('/EnterInfo')
+    
+  else:
+    # Update owner table with new owner record
+
+    q1 ="""
+      INSERT INTO
+        owner(owner_id, name, phone, email, picture)
+      VALUES
+        (%s, %s, %s, %s, %s);
+      """
+    g.conn.execute(q1, [owner_id, name, phone, email, picture])
+
+    # Update dog table with new dog record
+    q2 = """
+      INSERT INTO
+        dog(dog_id, name, age, weight, breed, play_intensity, picture1, picture2)
+      VALUES
+        (%s, %s, %s, %s, %s, %s, %s, %s);
+      """
+    g.conn.execute(q2, [dog_id, name, age, weight, breed, play_intensity, picture1, picture2])
+
+    # Update dog_owned_by
+    q3 ="""
+      INSERT INTO
+        dog_owned_by(dog_id, owner_id)
+      VALUES
+        (%s, %s);
+      """
+    g.conn.execute(q3, [dog_id, owner_id])
+    
+    # Update preference table with new preference record
+    q4 = """
+      INSERT INTO
+        preference(preference_id, age_min, age_max, weight_min, weight_max, play_intensity_min, play_intensity_max,  playdate_duration)
+      VALUES
+        (%s, %s, %s, %s, %s, %s, %s, %s);
+      """
+    g.conn.execute(q4, [preference_id, age_min, age_max, weight_min, weight_max, play_intensity_min, play_intensity_max, playdate_duration])
+
+    # Update preference_set_by table with new preference_set_by record
+    q5 = """
+      INSERT INTO
+        preference_set_by(preference_id, owner_id)
+      VALUES
+        (%s, %s);
+      """
+    g.conn.execute(q5, [preference_id, owner_id])
+
+    session['person_id'] = owner_id
+    session['person_name'] = name
+    session['logged_in'] = True
+
+    return redirect('/')
 
 
 # Example of adding new data to the database
@@ -398,8 +572,6 @@ def add_message():
   df_receiver.columns = cursor.keys()
   receiver_id = df_receiver.owner_id.iloc[0]
   cursor.close()
-
-  print receiver_id
 
   g.conn.execute(
     """
@@ -465,7 +637,7 @@ def login():
 @app.route('/logout')
 def logout():
     session['logged_in'] = False
-    flash('You are now logged out ' + session['person_name'] + '. See you again soon!')
+    flash('You are now logged out, ' + session['person_name'] + '. See you again soon!')
     return redirect('/')
 
 
