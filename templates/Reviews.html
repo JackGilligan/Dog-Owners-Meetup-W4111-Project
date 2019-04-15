@@ -21,28 +21,18 @@
     <a href="/logout">Log Out</a>
   </p>
 
-
-  <h2>Your Personal Profile</h2>
-  {% for row in owner_data %}
+  <h2>Your Reviews</h2>
+  <p>Reviews you've left of others. You cannot see reviews about yourself.</p>
+  {% for row in data %}
   {{ row|safe }}
   {% endfor %}
 
-  <h2>Your Dog Profiles</h2>
-  {% for row in dog_data %}
-  {{ row|safe }}
-  {% endfor %}
-
-  <h2>Add a Dog to your Dog Profile</h2>
-  <form method="POST" action="/add_dog">
-    <p>Dog ID: <input type="number" name="dog_id"></p>
-    <p>Dog Name: <input type="text" name="name"></p>
-    <p>Dog Age: <input type="number" name="age"></p>
-    <p>Dog Weight: <input type="number" name="weight"></p>
-    <p>Dog Breed: <input type="text" name="breed"></p>
-    <p>Dog Play Intensity (1 - 10): <input type="number" name="intensity" min="1" max="10"></p>
-    <p>Dog Picture Link 1: <input type="text" name="picture1"></p>
-    <p>Dog Picture Link 2: <input type="text" name="picture2"></p>
-    <input class="btn btn-primary" type="submit" value="Add Dog">
+  <h2>Leave a Review</h2>
+  <form method="POST" action="/add_review">
+    <p>Reviewee Email: <input type="text" name="reviewee_email"></p>
+    <p>Positive (1) or Negative (0): <input type="number" name="positive" min="0" max="1"></p>
+    <p>Feedback: <input type="text" name="feedback"></p>
+    <input class="btn btn-primary" type="submit" value="Leave Review">
   </form>
 
 </body>

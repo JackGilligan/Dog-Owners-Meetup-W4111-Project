@@ -128,30 +128,9 @@ def index():
     df_dog.columns = cursor.keys()
     cursor.close()
 
-    cursor = g.conn.execute(
-      """
-      SELECT
-        O.review_id, O.positive, O.feedback
-      FROM
-        owner_review O
-      WHERE
-        O.reviewee = %s
-      LIMIT 10
-      """,
-      session['person_id']
-    )
-
-    if cursor.rowcount > 0:
-      df_review = pd.DataFrame(cursor.fetchall())
-      df_review.columns = cursor.keys()
-    else:
-      df_review = pd.DataFrame(columns=['review_id', 'positive', 'feedback'])
-    cursor.close()
-
     context = dict(
       owner_data = [df_owner.to_html(classes='table', header="true", index=False)],
       dog_data = [df_dog.to_html(classes='table', header="true", index=False)],
-      review_data = [df_review.to_html(classes='table', header="true", index=False)]
     )
     return render_template("index.html", **context)
 
@@ -219,12 +198,10 @@ def matches():
             preference_set_by.owner_id = %(person_id)s
         )
       SELECT
-        owner.owner_id,
-        owner.name,
+        owner.name as owner_name,
         owner.phone,
         owner.email,
-        dog.dog_id,
-        dog.name,
+        dog.name as dog_name,
         dog.age,
         dog.weight,
         dog.breed,
@@ -341,12 +318,27 @@ def locations():
 @app.route('/playdates')
 def playdates():
 
-    q = """
-      SELECT *
-      FROM owner_meet
-      WHERE owner_meet.scheduler = %s OR owner_meet.schedulee = %s
+    cursor = g.conn.execute(
       """
-    cursor = g.conn.execute(q, [session['person_id'], session['person_id']])
+      SELECT
+        scheduler_owner.name as Scheduler,
+        scheduler_owner.name as Schedulee,
+        location.name as Location,
+        location.address as Address,
+        owner_meet.time as Time
+      FROM
+        owner_meet
+        LEFT JOIN owner as scheduler_owner ON owner_meet.scheduler = scheduler_owner.owner_id
+        LEFT JOIN owner as schedulee_owner ON owner_meet.schedulee = schedulee_owner.owner_id
+        LEFT JOIN location ON owner_meet.location_id = location.location_id
+      WHERE 
+        owner_meet.scheduler = %s or
+        owner_meet.schedulee = %s
+      ORDER BY
+        owner_meet.time;
+      """,
+      (session['person_id'], session['person_id'])
+    )
 
     if cursor.rowcount > 0:
       df = pd.DataFrame(cursor.fetchall())
@@ -360,6 +352,37 @@ def playdates():
     )
 
     return render_template("Playdates.html", **context)
+
+
+@app.route('/reviews')
+def reviews():
+
+    cursor = g.conn.execute(
+      """
+      SELECT
+        owner.name, owner_review.positive, owner_review.feedback
+      FROM
+        owner_review
+        LEFT JOIN owner on owner_review.reviewee = owner.owner_id
+      WHERE
+        owner_review.reviewer = %s
+      LIMIT 10
+      """,
+      session['person_id']
+    )
+    
+    if cursor.rowcount > 0:
+      df_review = pd.DataFrame(cursor.fetchall())
+      df_review.columns = cursor.keys()
+    else:
+      df_review = pd.DataFrame(cursor.fetchall())
+    cursor.close() 
+
+    context = dict(
+      data = [df_review.to_html(classes='table', header="true", index=False)]
+    )
+
+    return render_template("Reviews.html", **context)
 
 
 # Example of adding new data to the database
@@ -588,6 +611,97 @@ def add_message():
   )
   
   return redirect('/messages')
+
+
+@app.route('/add_playdate', methods=['POST'])
+def add_playdate():
+
+  cursor = g.conn.execute(
+    """
+    SELECT owner.owner_id
+    FROM owner
+    WHERE owner.email = %(schedulee_email)s;
+    """,
+    schedulee_email=request.form['schedulee_email']
+  )
+
+  df = pd.DataFrame(cursor.fetchall())
+  df.columns = cursor.keys()
+  schedulee_id = df.owner_id.iloc[0]
+  cursor.close()
+  print schedulee_id
+
+  cursor = g.conn.execute(
+    """
+    SELECT location.location_id
+    FROM location
+    WHERE location.address = %(address)s;
+    """,
+    address=request.form['address']
+  )
+
+  df = pd.DataFrame(cursor.fetchall())
+  df.columns = cursor.keys()
+  location_id = df.location_id.iloc[0]
+  cursor.close()
+  print location_id
+
+
+  g.conn.execute(
+    """
+    INSERT INTO
+      owner_meet(meet_id, location_id, scheduler, schedulee, time)
+    VALUES
+      (%(meet_id)s, %(location_id)s, %(scheduler)s, %(schedulee)s, %(time)s);
+    """,
+    meet_id=str(pd.Timestamp('now').strftime("%Y%m%d%H%M%S")),
+    location_id=location_id,
+    scheduler=session['person_id'],
+    schedulee=schedulee_id,
+    time=request.form['time']
+  )
+  
+  return redirect('/playdates')
+
+
+
+
+@app.route('/add_review', methods=['POST'])
+def add_review():
+
+  cursor = g.conn.execute(
+    """
+    SELECT owner.owner_id
+    FROM owner
+    WHERE owner.email = %(reviewee_email)s;
+    """,
+    reviewee_email=request.form['reviewee_email']
+  )
+
+  df_receiver = pd.DataFrame(cursor.fetchall())
+  df_receiver.columns = cursor.keys()
+  receiver_id = df_receiver.owner_id.iloc[0]
+  cursor.close()
+
+  print receiver_id
+
+  g.conn.execute(
+    """
+    INSERT INTO
+      owner_review(review_id, reviewer, reviewee, positive, feedback)
+    VALUES
+      (%(review_id)s, %(reviewer)s, %(reviewee)s, %(positive)s, %(feedback)s);
+    """,
+    review_id=str(pd.Timestamp('now').strftime("%Y%m%d%H%M%S")),
+    reviewer=session['person_id'],
+    reviewee=receiver_id,
+    positive=request.form['positive'],
+    feedback=request.form['feedback']
+  )
+  
+  return redirect('/reviews')
+
+
 
 @app.route('/login', methods=['POST'])
 def login():

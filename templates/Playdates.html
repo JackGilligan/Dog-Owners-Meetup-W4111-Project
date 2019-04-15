@@ -11,20 +11,31 @@
 
         <h1>Welcome to Puppy Pals!</h1>
         <p class="lead">Find the best playdate for you and your dog.</p>
-      <p>
-      <a href="/">Home</a> |
-      <a href="/matches">Matches</a> |
-      <a href="/messages">Messages</a> |
-      <a href="/locations">Locations</a> |
-      <a href="/playdates">Playdates</a> |
-      <a href="/logout">Log Out</a> 
-  </p>
+        <p>
+          <a href="/">Home</a> |
+          <a href="/matches">Matches</a> |
+          <a href="/messages">Messages</a> |
+          <a href="/locations">Locations</a> |
+          <a href="/playdates">Playdates</a> |
+          <a href="/reviews">Reviews</a> |
+          <a href="/logout">Log Out</a>
+        </p>
+      
 
   <h2>Playdates</h2>
   <p>Your scheduled play dates.</p>
   {% for row in data %}
   {{ row|safe }}
   {% endfor %}
+
+  <h3>Schedule a Playdate</h3>
+  <form method="POST" action="/add_playdate">
+    <p>Playdate Owner's Email: <input type="text" name="schedulee_email"></p>
+    <p>Playdate Address: <input type="text" name="address"></p>
+    <p>Playdate Time: <input type="datetime-local" name="time"></p>
+    <input class="btn btn-primary" type="submit" value="Schedule Playdate!">
+  </form>
+
 
 </body>
 
