@@ -217,7 +217,8 @@ def matches():
         (dog.weight >= owner_preferences.weight_min) AND
         (dog.weight <= owner_preferences.weight_max) AND 
         (dog.play_intensity >= owner_preferences.play_intensity_min) AND
-        (dog.play_intensity <= owner_preferences.play_intensity_max);
+        (dog.play_intensity <= owner_preferences.play_intensity_max) AND
+        (owner.owner_id != %(person_id)s);
       """,
       person_id=session['person_id']
     )
@@ -227,6 +228,7 @@ def matches():
       df_matches.columns = cursor.keys()
     else:
       df_matches = pd.Dataframe(columns = ['owner_id','name','phone','email','dog_id','name', 'age', 'weight', 'breed', 'play_intensity'])
+      flash("No matches yet! Wait for new users, or update your preferences!")
     cursor.close()
 
     context = dict(
@@ -260,7 +262,7 @@ def messages():
       WHERE 
         OC.sender = %s or
         OC.receiver = %s
-      ORDER BY OC.time;
+      ORDER BY OC.time DESC;
       """,
       (session['person_id'], session['person_id'])
     )
@@ -322,7 +324,7 @@ def playdates():
       """
       SELECT
         scheduler_owner.name as Scheduler,
-        scheduler_owner.name as Schedulee,
+        schedulee_owner.name as Schedulee,
         location.name as Location,
         location.address as Address,
         owner_meet.time as Time
@@ -514,7 +516,7 @@ def add_profile():
       VALUES
         (%s, %s, %s, %s, %s, %s, %s, %s);
       """
-    g.conn.execute(q2, [dog_id, name, age, weight, breed, play_intensity, picture1, picture2])
+    g.conn.execute(q2, [dog_id, dname, age, weight, breed, play_intensity, picture1, picture2])
 
     # Update dog_owned_by
     q3 ="""
@@ -554,28 +556,62 @@ def add_profile():
 @app.route('/add_dog', methods=['POST'])
 def add_dog():
 
-  g.conn.execute(
-    """
-    INSERT INTO
-      dog(dog_id, name, age, weight, breed, play_intensity, picture1, picture2)
-    VALUES
-      (%(dog_id)s, %(name)s, %(age)s, %(weight)s, %(breed)s, %(intensity)s, %(picture1)s, %(picture2)s);
-    """,
-    request.form
-  )
+  dog_id = 0
+  name = request.form['name']
+  age = request.form['age']
+  weight = request.form['weight']
+  breed = request.form['breed']
+  intensity = request.form['intensity']
+  picture1 = request.form['picture1']
+  picture2 = request.form['picture2']
+  print(dog_id)
+  
 
-  g.conn.execute(
-    """
-    INSERT INTO
-      dog_owned_by(dog_id, owner_id)
-    VALUES
-      (%(dog_id)s, %(owner_id)s);
-    """,
-    dog_id=request.form['dog_id'],
-    owner_id=session['person_id']
-  )
-
-  return redirect('/')
+  if name == "":
+    flash("Please enter your dog's name!")
+    return redirect('/')
+  elif age == "":
+    flash("Please enter your dog's age!")
+    return redirect('/')
+  elif weight == "":
+    flash("Please enter your dog's weight!")
+    return redirect('/')
+  elif intensity == "":
+    flash("Please enter your dog's play intensity!")
+    return redirect('/')
+  else:
+    print(dog_id)
+    # New dog_id
+    cursor = g.conn.execute(
+        """
+        SELECT dog_id FROM dog ORDER BY cast(dog_id as integer) DESC LIMIT 1
+        """
+      )
+    
+    for result2 in cursor:
+      dog_id = str(int(result2[0]) + 1)
+    cursor.close()
+    print(dog_id)
+    
+    #Insert into dog table
+    q1 = """
+      INSERT INTO
+        dog(dog_id, name, age, weight, breed, play_intensity, picture1, picture2)
+      VALUES
+        (%s, %s, %s, %s, %s, %s, %s, %s);
+      """
+    g.conn.execute(q1, [dog_id, name, age, weight, breed, intensity, picture1, picture2])
+    print(dog_id)
+    #Insert into dog_owned_by table
+    q2 = """
+      INSERT INTO
+        dog_owned_by(dog_id, owner_id)
+      VALUES
+        (%s, %s);
+      """
+    g.conn.execute(q2, [dog_id, session['person_id']])
+    print(dog_id)
+    return redirect('/')
 
 
 # Example of adding new data to the database
@@ -662,8 +698,6 @@ def add_playdate():
   )
   
   return redirect('/playdates')
-
-
 
 
 @app.route('/add_review', methods=['POST'])

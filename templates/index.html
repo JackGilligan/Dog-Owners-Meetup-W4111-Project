@@ -32,12 +32,22 @@
   {{ row|safe }}
   {% endfor %}
 
+  <br>
+
   <h2>Add a Dog to your Dog Profile</h2>
+
+  {% with messages = get_flashed_messages() %}
+  {% if messages %}
+  {% for message in messages %}
+  <p>{{message}}</p>
+  {% endfor %}
+  {% endif %}
+  {% endwith %}
+
   <form method="POST" action="/add_dog">
-    <p>Dog ID: <input type="number" name="dog_id"></p>
     <p>Dog Name: <input type="text" name="name"></p>
-    <p>Dog Age: <input type="number" name="age"></p>
-    <p>Dog Weight: <input type="number" name="weight"></p>
+    <p>Dog Age: <input type="number" name="age" min="0"></p>
+    <p>Dog Weight: <input type="number" name="weight" min="0"></p>
     <p>Dog Breed: <input type="text" name="breed"></p>
     <p>Dog Play Intensity (1 - 10): <input type="number" name="intensity" min="1" max="10"></p>
     <p>Dog Picture Link 1: <input type="text" name="picture1"></p>

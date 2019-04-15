@@ -29,10 +29,18 @@
   {% endfor %}
 
   <h2>Your Matches</h2>
-  <p>Nearby dogs that meet your playdate preferences.</p>
+  <p>Nearby dogs that meet your playmate preferences.</p>
   {% for row in match_data %}
   {{ row|safe }}
   {% endfor %}
+
+  {% with messages = get_flashed_messages() %}
+  {% if messages %}
+  {% for message in messages %}
+  <p>{{message}}</p>
+  {% endfor %}
+  {% endif %}
+  {% endwith %}
 
 </body>
 
