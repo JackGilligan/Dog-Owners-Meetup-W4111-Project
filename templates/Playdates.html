@@ -23,14 +23,23 @@
       
 
   <h2>Playdates</h2>
-  <p>Your scheduled play dates.</p>
+  <p>Your scheduled playdates.</p>
   {% for row in data %}
   {{ row|safe }}
   {% endfor %}
 
   <h3>Schedule a Playdate</h3>
+
+  {% with messages = get_flashed_messages() %}
+  {% if messages %}
+  {% for message in messages %}
+  <p>{{message}}</p>
+  {% endfor %}
+  {% endif %}
+  {% endwith %}
+  
   <form method="POST" action="/add_playdate">
-    <p>Playdate Owner's Email: <input type="text" name="schedulee_email"></p>
+    <p>Owner's Email: <input type="text" name="schedulee_email"></p>
     <p>Playdate Address: <input type="text" name="address"></p>
     <p>Playdate Time: <input type="datetime-local" name="time"></p>
     <input class="btn btn-primary" type="submit" value="Schedule Playdate!">

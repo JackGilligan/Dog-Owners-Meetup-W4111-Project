@@ -29,6 +29,14 @@
   {{ row|safe }}
   {% endfor %}
 
+  {% with messages = get_flashed_messages() %}
+  {% if messages %}
+  {% for message in messages %}
+  <p>{{message}}</p>
+  {% endfor %}
+  {% endif %}
+  {% endwith %}
+
   <h3>Send a Message</h3>
   <form method="POST" action="/add_message">
     <p>Recipient Email: <input type="text" name="receiver"></p>

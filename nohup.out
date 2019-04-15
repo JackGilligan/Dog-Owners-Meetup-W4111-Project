@@ -1,0 +1,48 @@
+/Users/jackgilligan/anaconda2/lib/python2.7/site-packages/psycopg2/__init__.py:144: UserWarning: The psycopg2 wheel package will be renamed from release 2.8; in order to keep installing from binary please use "pip install psycopg2-binary" instead. For details see: <http://initd.org/psycopg/docs/install.html#binary-install-from-pypi>.
+  """)
+running on 0.0.0.0:8008
+ * Serving Flask app "server" (lazy loading)
+ * Environment: production
+   WARNING: Do not use the development server in a production environment.
+   Use a production WSGI server instead.
+ * Debug mode: off
+ * Running on http://0.0.0.0:8008/ (Press CTRL+C to quit)
+127.0.0.1 - - [15/Apr/2019 01:41:18] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [15/Apr/2019 01:41:18] "GET /static/styles.css HTTP/1.1" 200 -
+127.0.0.1 - - [15/Apr/2019 01:41:19] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [15/Apr/2019 01:41:31] "POST /login HTTP/1.1" 302 -
+127.0.0.1 - - [15/Apr/2019 01:41:31] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [15/Apr/2019 01:41:50] "GET /reviews HTTP/1.1" 200 -
+127.0.0.1 - - [15/Apr/2019 01:41:52] "GET /playdates HTTP/1.1" 200 -
+127.0.0.1 - - [15/Apr/2019 01:41:55] "GET /locations HTTP/1.1" 200 -
+127.0.0.1 - - [15/Apr/2019 01:41:58] "GET /messages HTTP/1.1" 200 -
+127.0.0.1 - - [15/Apr/2019 01:42:24] "GET /logout HTTP/1.1" 302 -
+127.0.0.1 - - [15/Apr/2019 01:42:24] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [15/Apr/2019 01:42:28] "POST /login HTTP/1.1" 302 -
+127.0.0.1 - - [15/Apr/2019 01:42:28] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [15/Apr/2019 01:42:33] "GET /locations HTTP/1.1" 200 -
+127.0.0.1 - - [15/Apr/2019 01:42:33] "GET /playdates HTTP/1.1" 200 -
+127.0.0.1 - - [15/Apr/2019 01:42:36] "GET /messages HTTP/1.1" 200 -
+[2019-04-15 01:42:43,233] ERROR in app: Exception on /add_message [POST]
+Traceback (most recent call last):
+  File "/Users/jackgilligan/anaconda2/lib/python2.7/site-packages/flask/app.py", line 2292, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Users/jackgilligan/anaconda2/lib/python2.7/site-packages/flask/app.py", line 1815, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Users/jackgilligan/anaconda2/lib/python2.7/site-packages/flask/app.py", line 1718, in handle_user_exception
+    reraise(exc_type, exc_value, tb)
+  File "/Users/jackgilligan/anaconda2/lib/python2.7/site-packages/flask/app.py", line 1813, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Users/jackgilligan/anaconda2/lib/python2.7/site-packages/flask/app.py", line 1799, in dispatch_request
+    return self.view_functions[rule.endpoint](**req.view_args)
+  File "server.py", line 631, in add_message
+    df_receiver.columns = cursor.keys()
+  File "/Users/jackgilligan/anaconda2/lib/python2.7/site-packages/pandas/core/generic.py", line 4385, in __setattr__
+    return object.__setattr__(self, name, value)
+  File "pandas/_libs/properties.pyx", line 69, in pandas._libs.properties.AxisProperty.__set__
+  File "/Users/jackgilligan/anaconda2/lib/python2.7/site-packages/pandas/core/generic.py", line 645, in _set_axis
+    self._data.set_axis(axis, labels)
+  File "/Users/jackgilligan/anaconda2/lib/python2.7/site-packages/pandas/core/internals.py", line 3323, in set_axis
+    'values have {new} elements'.format(old=old_len, new=new_len))
+ValueError: Length mismatch: Expected axis has 0 elements, new values have 1 elements
+127.0.0.1 - - [15/Apr/2019 01:42:43] "POST /add_message HTTP/1.1" 500 -

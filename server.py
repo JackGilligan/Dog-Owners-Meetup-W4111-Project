@@ -618,122 +618,205 @@ def add_dog():
 @app.route('/add_message', methods=['POST'])
 def add_message():
 
+  emails = []
   cursor = g.conn.execute(
-    """
-    SELECT owner.owner_id
-    FROM owner
-    WHERE owner.email = %(receiver)s;
-    """,
-    receiver=request.form['receiver']
-  )
-
-  df_receiver = pd.DataFrame(cursor.fetchall())
-  df_receiver.columns = cursor.keys()
-  receiver_id = df_receiver.owner_id.iloc[0]
+      """
+      SELECT email FROM owner
+      """
+    )
+  
+  for result in cursor:
+    emails.append(result[0])
   cursor.close()
 
-  g.conn.execute(
-    """
-    INSERT INTO
-      owner_contact(contact_id, sender, receiver, time, message)
-    VALUES
-      (%(contact_id)s, %(sender)s, %(receiver)s, %(time)s, %(message)s);
-    """,
-    contact_id=str(pd.Timestamp('now').strftime("%Y%m%d%H%M%S")),
-    sender=session['person_id'],
-    time=pd.Timestamp('now').strftime("%Y-%m-%d %H:%M:%S"),
-    receiver=receiver_id,
-    message=request.form['message']
-  )
-  
-  return redirect('/messages')
+  receiver=request.form['receiver']
+  message=request.form['message']
+
+  if receiver not in emails:
+    flash('That email is not on record!')
+    return redirect('/messages')
+  elif message == "":
+    flash("That message was empty!")
+    return redirect('/messages')
+  else:
+    print("made it")
+    cursor = g.conn.execute(
+      """
+      SELECT owner.owner_id
+      FROM owner
+      WHERE owner.email = %(receiver)s;
+      """,
+      receiver=request.form['receiver']
+    )
+
+    df_receiver = pd.DataFrame(cursor.fetchall())
+    df_receiver.columns = cursor.keys()
+    receiver_id = df_receiver.owner_id.iloc[0]
+    cursor.close()
+
+    g.conn.execute(
+      """
+      INSERT INTO
+        owner_contact(contact_id, sender, receiver, time, message)
+      VALUES
+        (%(contact_id)s, %(sender)s, %(receiver)s, %(time)s, %(message)s);
+      """,
+      contact_id=str(pd.Timestamp('now').strftime("%Y%m%d%H%M%S")),
+      sender=session['person_id'],
+      time=pd.Timestamp('now').strftime("%Y-%m-%d %H:%M:%S"),
+      receiver=receiver_id,
+      message=request.form['message']
+    )
+    
+    return redirect('/messages')
 
 
 @app.route('/add_playdate', methods=['POST'])
 def add_playdate():
 
+  emails = []
   cursor = g.conn.execute(
-    """
-    SELECT owner.owner_id
-    FROM owner
-    WHERE owner.email = %(schedulee_email)s;
-    """,
-    schedulee_email=request.form['schedulee_email']
-  )
-
-  df = pd.DataFrame(cursor.fetchall())
-  df.columns = cursor.keys()
-  schedulee_id = df.owner_id.iloc[0]
-  cursor.close()
-  print schedulee_id
-
-  cursor = g.conn.execute(
-    """
-    SELECT location.location_id
-    FROM location
-    WHERE location.address = %(address)s;
-    """,
-    address=request.form['address']
-  )
-
-  df = pd.DataFrame(cursor.fetchall())
-  df.columns = cursor.keys()
-  location_id = df.location_id.iloc[0]
-  cursor.close()
-  print location_id
-
-
-  g.conn.execute(
-    """
-    INSERT INTO
-      owner_meet(meet_id, location_id, scheduler, schedulee, time)
-    VALUES
-      (%(meet_id)s, %(location_id)s, %(scheduler)s, %(schedulee)s, %(time)s);
-    """,
-    meet_id=str(pd.Timestamp('now').strftime("%Y%m%d%H%M%S")),
-    location_id=location_id,
-    scheduler=session['person_id'],
-    schedulee=schedulee_id,
-    time=request.form['time']
-  )
+      """
+      SELECT email FROM owner
+      """
+    )
   
-  return redirect('/playdates')
+  for result in cursor:
+    emails.append(result[0])
+  cursor.close()
+
+
+  addresses = []
+  cursor = g.conn.execute(
+      """
+      SELECT address FROM location
+      """
+    )
+  
+  for result in cursor:
+    addresses.append(result[0])
+  cursor.close()
+
+  email=request.form['schedulee_email']
+  address = request.form['address']
+  time = request.form['time']
+
+  if email not in emails:
+    flash('That email is not on record!')
+    return redirect('/playdates')
+  elif address == "":
+    flash('Please add an address!')
+    return redirect('/playdates')
+  elif time == "":
+    flash('Please add a time!')
+    return redirect('/playdates')
+  elif address not in addresses:
+    flash('Please add an address from Locations!')
+    return redirect('/playdates')
+  else:
+    cursor = g.conn.execute(
+      """
+      SELECT owner.owner_id
+      FROM owner
+      WHERE owner.email = %(schedulee_email)s;
+      """,
+      schedulee_email=request.form['schedulee_email']
+    )
+
+    df = pd.DataFrame(cursor.fetchall())
+    df.columns = cursor.keys()
+    schedulee_id = df.owner_id.iloc[0]
+    cursor.close()
+    print schedulee_id
+
+    cursor = g.conn.execute(
+      """
+      SELECT location.location_id
+      FROM location
+      WHERE location.address = %(address)s;
+      """,
+      address=request.form['address']
+    )
+
+    df = pd.DataFrame(cursor.fetchall())
+    df.columns = cursor.keys()
+    location_id = df.location_id.iloc[0]
+    cursor.close()
+    print location_id
+
+
+    g.conn.execute(
+      """
+      INSERT INTO
+        owner_meet(meet_id, location_id, scheduler, schedulee, time)
+      VALUES
+        (%(meet_id)s, %(location_id)s, %(scheduler)s, %(schedulee)s, %(time)s);
+      """,
+      meet_id=str(pd.Timestamp('now').strftime("%Y%m%d%H%M%S")),
+      location_id=location_id,
+      scheduler=session['person_id'],
+      schedulee=schedulee_id,
+      time=request.form['time']
+    )
+    
+    return redirect('/playdates')
 
 
 @app.route('/add_review', methods=['POST'])
 def add_review():
 
+  emails = []
   cursor = g.conn.execute(
-    """
-    SELECT owner.owner_id
-    FROM owner
-    WHERE owner.email = %(reviewee_email)s;
-    """,
-    reviewee_email=request.form['reviewee_email']
-  )
-
-  df_receiver = pd.DataFrame(cursor.fetchall())
-  df_receiver.columns = cursor.keys()
-  receiver_id = df_receiver.owner_id.iloc[0]
+      """
+      SELECT email FROM owner
+      """
+    )
+  
+  for result in cursor:
+    emails.append(result[0])
   cursor.close()
 
-  print receiver_id
+  reviewee_email=request.form['reviewee_email']
+  positive = request.form['positive']
 
-  g.conn.execute(
-    """
-    INSERT INTO
-      owner_review(review_id, reviewer, reviewee, positive, feedback)
-    VALUES
-      (%(review_id)s, %(reviewer)s, %(reviewee)s, %(positive)s, %(feedback)s);
-    """,
-    review_id=str(pd.Timestamp('now').strftime("%Y%m%d%H%M%S")),
-    reviewer=session['person_id'],
-    reviewee=receiver_id,
-    positive=request.form['positive'],
-    feedback=request.form['feedback']
-  )
-  
-  return redirect('/reviews')
+  if reviewee_email not in emails:
+    flash('That email is not on record!')
+    return redirect('/reviews')
+  elif positive == "":
+    flash('Please let us know if the experience was positive or negative!')
+    return redirect('/reviews')
+  else:
+    cursor = g.conn.execute(
+      """
+      SELECT owner.owner_id
+      FROM owner
+      WHERE owner.email = %(reviewee_email)s;
+      """,
+      reviewee_email=request.form['reviewee_email']
+    )
+
+    df_receiver = pd.DataFrame(cursor.fetchall())
+    df_receiver.columns = cursor.keys()
+    receiver_id = df_receiver.owner_id.iloc[0]
+    cursor.close()
+
+    print receiver_id
+
+    g.conn.execute(
+      """
+      INSERT INTO
+        owner_review(review_id, reviewer, reviewee, positive, feedback)
+      VALUES
+        (%(review_id)s, %(reviewer)s, %(reviewee)s, %(positive)s, %(feedback)s);
+      """,
+      review_id=str(pd.Timestamp('now').strftime("%Y%m%d%H%M%S")),
+      reviewer=session['person_id'],
+      reviewee=receiver_id,
+      positive=request.form['positive'],
+      feedback=request.form['feedback']
+    )
+    
+    return redirect('/reviews')
 
 
 
