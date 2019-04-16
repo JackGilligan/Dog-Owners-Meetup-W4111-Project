@@ -144,443 +144,294 @@ def index():
 #
 @app.route('/EnterInfo')
 def EnterInfo():
-    return render_template("EnterInfo.html")
+    if not session.get('logged_in'):
+      return render_template("Login.html")
+    else:
+      return render_template("EnterInfo.html")
 
 
 @app.route('/matches')
 def matches():
-
-    cursor = g.conn.execute(
-      """
-      WITH
-        owner_preferences AS (
-          SELECT 
-            preference.age_min,
-            preference.age_max,
-            preference.weight_min,
-            preference.weight_max,
-            preference.play_intensity_min,
-            preference.play_intensity_max
-          FROM
-            preference
-            LEFT JOIN preference_set_by ON preference.preference_id = preference_set_by.preference_id
-          WHERE
-            preference_set_by.owner_id = %(person_id)s
-        )
-      SELECT *
-      FROM owner_preferences
-      """,
-      person_id=session['person_id']
-    )
-
-    if cursor.rowcount > 0:
-      df_preferences  = pd.DataFrame(cursor.fetchall())
-      df_preferences.columns = cursor.keys()
+    if not session.get('logged_in'):
+      return render_template("Login.html")
     else:
-      df_preferences = pd.Dataframe(columns = ['age_min','age_max','weight_min', 'weight_max', 'play_intensity_min', 'play_intensity_max'])
-    cursor.close()
 
-    cursor = g.conn.execute(
-      """
-      WITH
-        owner_preferences AS (
-          SELECT 
-            preference.age_min,
-            preference.age_max,
-            preference.weight_min,
-            preference.weight_max,
-            preference.play_intensity_min,
-            preference.play_intensity_max
-          FROM
-            preference
-            LEFT JOIN preference_set_by ON preference.preference_id = preference_set_by.preference_id
-          WHERE
-            preference_set_by.owner_id = %(person_id)s
-        )
-      SELECT
-        owner.name as owner_name,
-        owner.phone,
-        owner.email,
-        dog.name as dog_name,
-        dog.age,
-        dog.weight,
-        dog.breed,
-        dog.play_intensity
-      FROM
-        dog
-        CROSS JOIN owner_preferences
-        LEFT JOIN dog_owned_by on dog.dog_id = dog_owned_by.dog_id
-        LEFT JOIN owner on dog_owned_by.owner_id = owner.owner_id
-      WHERE 
-        (dog.age >= owner_preferences.age_min) AND
-        (dog.age <= owner_preferences.age_max) AND
-        (dog.weight >= owner_preferences.weight_min) AND
-        (dog.weight <= owner_preferences.weight_max) AND 
-        (dog.play_intensity >= owner_preferences.play_intensity_min) AND
-        (dog.play_intensity <= owner_preferences.play_intensity_max) AND
-        (owner.owner_id != %(person_id)s);
-      """,
-      person_id=session['person_id']
-    )
+      cursor = g.conn.execute(
+        """
+        WITH
+          owner_preferences AS (
+            SELECT 
+              preference.age_min,
+              preference.age_max,
+              preference.weight_min,
+              preference.weight_max,
+              preference.play_intensity_min,
+              preference.play_intensity_max
+            FROM
+              preference
+              LEFT JOIN preference_set_by ON preference.preference_id = preference_set_by.preference_id
+            WHERE
+              preference_set_by.owner_id = %(person_id)s
+          )
+        SELECT *
+        FROM owner_preferences
+        """,
+        person_id=session['person_id']
+      )
 
-    if cursor.rowcount > 0:
-      df_matches = pd.DataFrame(cursor.fetchall())
-      df_matches.columns = cursor.keys()
-    else:
-      df_matches = pd.Dataframe(columns = ['owner_id','name','phone','email','dog_id','name', 'age', 'weight', 'breed', 'play_intensity'])
-      flash("No matches yet! Wait for new users, or update your preferences!")
-    cursor.close()
+      if cursor.rowcount > 0:
+        df_preferences  = pd.DataFrame(cursor.fetchall())
+        df_preferences.columns = cursor.keys()
+      else:
+        df_preferences = pd.Dataframe(columns = ['age_min','age_max','weight_min', 'weight_max', 'play_intensity_min', 'play_intensity_max'])
+      cursor.close()
 
-    context = dict(
-      preference_data = [df_preferences.to_html(classes='table', header="true", index=False)],
-      match_data = [df_matches.to_html(classes='table', header="true", index=False)]
-    )
+      cursor = g.conn.execute(
+        """
+        WITH
+          owner_preferences AS (
+            SELECT 
+              preference.age_min,
+              preference.age_max,
+              preference.weight_min,
+              preference.weight_max,
+              preference.play_intensity_min,
+              preference.play_intensity_max
+            FROM
+              preference
+              LEFT JOIN preference_set_by ON preference.preference_id = preference_set_by.preference_id
+            WHERE
+              preference_set_by.owner_id = %(person_id)s
+          )
+        SELECT
+          owner.name as owner_name,
+          owner.phone,
+          owner.email,
+          dog.name as dog_name,
+          dog.age,
+          dog.weight,
+          dog.breed,
+          dog.play_intensity
+        FROM
+          dog
+          CROSS JOIN owner_preferences
+          LEFT JOIN dog_owned_by on dog.dog_id = dog_owned_by.dog_id
+          LEFT JOIN owner on dog_owned_by.owner_id = owner.owner_id
+        WHERE 
+          (dog.age >= owner_preferences.age_min) AND
+          (dog.age <= owner_preferences.age_max) AND
+          (dog.weight >= owner_preferences.weight_min) AND
+          (dog.weight <= owner_preferences.weight_max) AND 
+          (dog.play_intensity >= owner_preferences.play_intensity_min) AND
+          (dog.play_intensity <= owner_preferences.play_intensity_max) AND
+          (owner.owner_id != %(person_id)s);
+        """,
+        person_id=session['person_id']
+      )
 
-    return render_template("Matches.html", **context)
+      if cursor.rowcount > 0:
+        df_matches = pd.DataFrame(cursor.fetchall())
+        df_matches.columns = cursor.keys()
+      else:
+        df_matches = pd.Dataframe(columns = ['owner_id','name','phone','email','dog_id','name', 'age', 'weight', 'breed', 'play_intensity'])
+        flash("No matches yet! Wait for new users, or update your preferences!")
+      cursor.close()
+
+      context = dict(
+        preference_data = [df_preferences.to_html(classes='table', header="true", index=False)],
+        match_data = [df_matches.to_html(classes='table', header="true", index=False)]
+      )
+
+      return render_template("Matches.html", **context)
 
 
 @app.route('/messages')
 def messages():
 
-    # debugging
-    print '\n'
-    print "REQUEST ARGUMENTS:"
-    print request.args
-
-    print '\n'
-    print "SESSION ARGUMENTS:"
-    print session
-
-    messages = []
-    cursor = g.conn.execute(
-      """
-      SELECT OC.time, O1.name as sender, O2.name as receiver, OC.message
-      FROM
-        owner_contact as OC
-        LEFT JOIN owner as O1 ON OC.sender = O1.owner_id
-        LEFT JOIN owner as O2 ON OC.receiver = O2.owner_id
-      WHERE 
-        OC.sender = %s or
-        OC.receiver = %s
-      ORDER BY OC.time DESC;
-      """,
-      (session['person_id'], session['person_id'])
-    )
-    if cursor.rowcount > 0:
-      df = pd.DataFrame(cursor.fetchall())
-      df.columns = cursor.keys()
+    if not session.get('logged_in'):
+      return render_template("Login.html")
     else:
-      df = pd.DataFrame(columns=['time', 'sender', 'receiver', 'message'])
-    cursor.close()
-    context = dict(
-      data = [df.to_html(classes='table', header="true", index=False)]
-    )
 
-    return render_template("Messages.html", **context)
+      # debugging
+      print '\n'
+      print "REQUEST ARGUMENTS:"
+      print request.args
+
+      print '\n'
+      print "SESSION ARGUMENTS:"
+      print session
+
+      messages = []
+      cursor = g.conn.execute(
+        """
+        SELECT OC.time, O1.name as sender, O2.name as receiver, OC.message
+        FROM
+          owner_contact as OC
+          LEFT JOIN owner as O1 ON OC.sender = O1.owner_id
+          LEFT JOIN owner as O2 ON OC.receiver = O2.owner_id
+        WHERE 
+          OC.sender = %s or
+          OC.receiver = %s
+        ORDER BY OC.time DESC;
+        """,
+        (session['person_id'], session['person_id'])
+      )
+      if cursor.rowcount > 0:
+        df = pd.DataFrame(cursor.fetchall())
+        df.columns = cursor.keys()
+      else:
+        df = pd.DataFrame(columns=['time', 'sender', 'receiver', 'message'])
+      cursor.close()
+      context = dict(
+        data = [df.to_html(classes='table', header="true", index=False)]
+      )
+
+      return render_template("Messages.html", **context)
     
 
 @app.route('/locations')
 def locations():
 
-    # debugging
-    print '\n'
-    print "REQUEST ARGUMENTS:"
-    print request.args
+    if not session.get('logged_in'):
+      return render_template("Login.html")
+    else:
 
-    print '\n'
-    print "SESSION ARGUMENTS:"
-    print session
+      # debugging
+      print '\n'
+      print "REQUEST ARGUMENTS:"
+      print request.args
 
-    cursor = g.conn.execute(
-      """
-      SELECT L.name, L.address, tmp.num_meetings
-      FROM 
-        (
-          SELECT OM.location_id, COUNT(*) as num_meetings
-          FROM owner_meet as OM
-          GROUP BY OM.location_id
-        ) as tmp
-        LEFT JOIN location as L ON tmp.location_id = L.location_id
-      ORDER BY tmp.num_meetings DESC
-      LIMIT 5;
-      """
-    )
+      print '\n'
+      print "SESSION ARGUMENTS:"
+      print session
 
-    df = pd.DataFrame(cursor.fetchall())
-    df.columns = cursor.keys()
-    cursor.close()
+      cursor = g.conn.execute(
+        """
+        SELECT L.name, L.address, tmp.num_meetings
+        FROM 
+          (
+            SELECT OM.location_id, COUNT(*) as num_meetings
+            FROM owner_meet as OM
+            GROUP BY OM.location_id
+          ) as tmp
+          LEFT JOIN location as L ON tmp.location_id = L.location_id
+        ORDER BY tmp.num_meetings DESC
+        LIMIT 5;
+        """
+      )
 
-    context = dict(
-      data = [df.to_html(classes='table', header="true", index=False)]
-    )
+      df = pd.DataFrame(cursor.fetchall())
+      df.columns = cursor.keys()
+      cursor.close()
 
-    return render_template("Locations.html", **context)
+      context = dict(
+        data = [df.to_html(classes='table', header="true", index=False)]
+      )
+
+      return render_template("Locations.html", **context)
 
 
 @app.route('/playdates')
 def playdates():
 
-    cursor = g.conn.execute(
-      """
-      SELECT
-        scheduler_owner.name as Scheduler,
-        schedulee_owner.name as Schedulee,
-        location.name as Location,
-        location.address as Address,
-        owner_meet.time as Time
-      FROM
-        owner_meet
-        LEFT JOIN owner as scheduler_owner ON owner_meet.scheduler = scheduler_owner.owner_id
-        LEFT JOIN owner as schedulee_owner ON owner_meet.schedulee = schedulee_owner.owner_id
-        LEFT JOIN location ON owner_meet.location_id = location.location_id
-      WHERE 
-        owner_meet.scheduler = %s or
-        owner_meet.schedulee = %s
-      ORDER BY
-        owner_meet.time;
-      """,
-      (session['person_id'], session['person_id'])
-    )
-
-    if cursor.rowcount > 0:
-      df = pd.DataFrame(cursor.fetchall())
-      df.columns = cursor.keys()
+    if not session.get('logged_in'):
+      return render_template("Login.html")
     else:
-      df = pd.DataFrame(cursor.fetchall())
-    cursor.close()
 
-    context = dict(
-      data = [df.to_html(classes='table', header="true", index=False)]
-    )
+      cursor = g.conn.execute(
+        """
+        SELECT
+          scheduler_owner.name as Scheduler,
+          schedulee_owner.name as Schedulee,
+          location.name as Location,
+          location.address as Address,
+          owner_meet.time as Time
+        FROM
+          owner_meet
+          LEFT JOIN owner as scheduler_owner ON owner_meet.scheduler = scheduler_owner.owner_id
+          LEFT JOIN owner as schedulee_owner ON owner_meet.schedulee = schedulee_owner.owner_id
+          LEFT JOIN location ON owner_meet.location_id = location.location_id
+        WHERE 
+          owner_meet.scheduler = %s or
+          owner_meet.schedulee = %s
+        ORDER BY
+          owner_meet.time;
+        """,
+        (session['person_id'], session['person_id'])
+      )
 
-    return render_template("Playdates.html", **context)
+      if cursor.rowcount > 0:
+        df = pd.DataFrame(cursor.fetchall())
+        df.columns = cursor.keys()
+      else:
+        df = pd.DataFrame(cursor.fetchall())
+      cursor.close()
+
+      context = dict(
+        data = [df.to_html(classes='table', header="true", index=False)]
+      )
+
+      return render_template("Playdates.html", **context)
 
 
 @app.route('/reviews')
 def reviews():
 
-    cursor = g.conn.execute(
-      """
-      SELECT
-        owner.name, owner_review.positive, owner_review.feedback
-      FROM
-        owner_review
-        LEFT JOIN owner on owner_review.reviewee = owner.owner_id
-      WHERE
-        owner_review.reviewer = %s
-      LIMIT 10
-      """,
-      session['person_id']
-    )
-    
-    if cursor.rowcount > 0:
-      df_review = pd.DataFrame(cursor.fetchall())
-      df_review.columns = cursor.keys()
+    if not session.get('logged_in'):
+      return render_template("Login.html")
     else:
-      df_review = pd.DataFrame(cursor.fetchall())
-    cursor.close() 
 
-    context = dict(
-      data = [df_review.to_html(classes='table', header="true", index=False)]
-    )
+      cursor = g.conn.execute(
+        """
+        SELECT
+          owner.name, owner_review.positive, owner_review.feedback
+        FROM
+          owner_review
+          LEFT JOIN owner on owner_review.reviewee = owner.owner_id
+        WHERE
+          owner_review.reviewer = %s
+        LIMIT 10
+        """,
+        session['person_id']
+      )
+      
+      if cursor.rowcount > 0:
+        df_review = pd.DataFrame(cursor.fetchall())
+        df_review.columns = cursor.keys()
+      else:
+        df_review = pd.DataFrame(cursor.fetchall())
+      cursor.close() 
 
-    return render_template("Reviews.html", **context)
+      context = dict(
+        data = [df_review.to_html(classes='table', header="true", index=False)]
+      )
+
+      return render_template("Reviews.html", **context)
 
 
 # Example of adding new data to the database
 @app.route('/add_profile', methods=['POST'])
 def add_profile():
 
-  owner_id = 0
-  dog_id = 0
-  preference_id = 0
-  
-  # New owner_id
-  cursor = g.conn.execute(
-      """
-      SELECT owner_id FROM owner ORDER BY cast(owner_id as integer) DESC LIMIT 1
-      """
-    )
-  
-  for result in cursor:
-    owner_id = str(int(result[0]) + 1)
-  cursor.close()
-
-  # New dog_id
-  cursor = g.conn.execute(
-      """
-      SELECT dog_id FROM dog ORDER BY cast(dog_id as integer) DESC LIMIT 1
-      """
-    )
-  
-  for result2 in cursor:
-    dog_id = str(int(result2[0]) + 1)
-  cursor.close()
-
-  # New preference_id
-  cursor = g.conn.execute(
-      """
-      SELECT preference_id FROM preference ORDER BY cast(preference_id as integer) DESC LIMIT 1
-      """
-    )
-  
-  for result3 in cursor:
-    preference_id = str(int(result3[0]) + 1)
-  cursor.close()
-
-  print(owner_id, dog_id, preference_id)
-
-  # Email List
-  emails = []
-  cursor = g.conn.execute(
-      """
-      SELECT email FROM owner
-      """
-    )
-  
-  for result in cursor:
-    emails.append(result[0])
-  cursor.close()
-
-  # Check Input
-  name = request.form['name']
-  phone = request.form['phone']
-  email = request.form['email']
-  picture = request.form['picture']
-
-  dname = request.form['dname']
-  age = request.form['age']
-  weight = request.form['weight']
-  breed = request.form['breed']
-  play_intensity = request.form['play_intensity']
-  picture1 = request.form['picture1']
-  picture2 = request.form['picture2']
-
-  age_min = request.form['agemin']
-  age_max = request.form['agemax']
-  weight_min = request.form['wgtmin']
-  weight_max = request.form['wgtmax']
-  play_intensity_min = request.form['pimin']
-  play_intensity_max = request.form['pimax']
-  playdate_duration = request.form['playdate_duration']
-
-  if name == "":
-    flash('Please enter your name!')
-    return redirect('/EnterInfo')
-  elif email == "":
-    flash("Please enter your email!")
-    return redirect('/EnterInfo')
-  elif picture == "":
-    flash("Please add a picture of yourself!")
-    return redirect('/EnterInfo')
-  elif email in emails:
-    flash('Profile already exists for this email. Please log in with your email!')
-    return redirect('/EnterInfo')
-  elif dname == "":
-    flash("Please enter your dog's name!")
-    return redirect('/EnterInfo')
-  elif age == "":
-    flash("Please enter your dog's age!")
-    return redirect('/EnterInfo')
-  elif weight == "":
-    flash("Please enter your dog's weight!")
-    return redirect('/EnterInfo')
-  elif picture1 == "":
-    flash("Please add a picture in Picture (1)!")
-    return redirect('/EnterInfo')
-  elif age_max < age_min:
-    flash("Age Max must be larger than Age Min!")
-    return redirect('/EnterInfo')
-  elif weight_max < weight_min:
-    flash("Weight Max must be larger than Weight Min!")
-    return redirect('/EnterInfo')
-  elif play_intensity_max < play_intensity_min:
-    flash(" Play Intensity Max must be larger than Play Intensity Min!")
-    return redirect('/EnterInfo')
-    
+  if not session.get('logged_in'):
+      return render_template("Login.html")
   else:
-    # Update owner table with new owner record
 
-    q1 ="""
-      INSERT INTO
-        owner(owner_id, name, phone, email, picture)
-      VALUES
-        (%s, %s, %s, %s, %s);
-      """
-    g.conn.execute(q1, [owner_id, name, phone, email, picture])
-
-    # Update dog table with new dog record
-    q2 = """
-      INSERT INTO
-        dog(dog_id, name, age, weight, breed, play_intensity, picture1, picture2)
-      VALUES
-        (%s, %s, %s, %s, %s, %s, %s, %s);
-      """
-    g.conn.execute(q2, [dog_id, dname, age, weight, breed, play_intensity, picture1, picture2])
-
-    # Update dog_owned_by
-    q3 ="""
-      INSERT INTO
-        dog_owned_by(dog_id, owner_id)
-      VALUES
-        (%s, %s);
-      """
-    g.conn.execute(q3, [dog_id, owner_id])
+    owner_id = 0
+    dog_id = 0
+    preference_id = 0
     
-    # Update preference table with new preference record
-    q4 = """
-      INSERT INTO
-        preference(preference_id, age_min, age_max, weight_min, weight_max, play_intensity_min, play_intensity_max,  playdate_duration)
-      VALUES
-        (%s, %s, %s, %s, %s, %s, %s, %s);
-      """
-    g.conn.execute(q4, [preference_id, age_min, age_max, weight_min, weight_max, play_intensity_min, play_intensity_max, playdate_duration])
+    # New owner_id
+    cursor = g.conn.execute(
+        """
+        SELECT owner_id FROM owner ORDER BY cast(owner_id as integer) DESC LIMIT 1
+        """
+      )
+    
+    for result in cursor:
+      owner_id = str(int(result[0]) + 1)
+    cursor.close()
 
-    # Update preference_set_by table with new preference_set_by record
-    q5 = """
-      INSERT INTO
-        preference_set_by(preference_id, owner_id)
-      VALUES
-        (%s, %s);
-      """
-    g.conn.execute(q5, [preference_id, owner_id])
-
-    session['person_id'] = owner_id
-    session['person_name'] = name
-    session['logged_in'] = True
-
-    return redirect('/')
-
-
-# Example of adding new data to the database
-@app.route('/add_dog', methods=['POST'])
-def add_dog():
-
-  dog_id = 0
-  name = request.form['name']
-  age = request.form['age']
-  weight = request.form['weight']
-  breed = request.form['breed']
-  intensity = request.form['intensity']
-  picture1 = request.form['picture1']
-  picture2 = request.form['picture2']
-  print(dog_id)
-  
-
-  if name == "":
-    flash("Please enter your dog's name!")
-    return redirect('/')
-  elif age == "":
-    flash("Please enter your dog's age!")
-    return redirect('/')
-  elif weight == "":
-    flash("Please enter your dog's weight!")
-    return redirect('/')
-  elif intensity == "":
-    flash("Please enter your dog's play intensity!")
-    return redirect('/')
-  else:
-    print(dog_id)
     # New dog_id
     cursor = g.conn.execute(
         """
@@ -591,232 +442,423 @@ def add_dog():
     for result2 in cursor:
       dog_id = str(int(result2[0]) + 1)
     cursor.close()
+
+    # New preference_id
+    cursor = g.conn.execute(
+        """
+        SELECT preference_id FROM preference ORDER BY cast(preference_id as integer) DESC LIMIT 1
+        """
+      )
+    
+    for result3 in cursor:
+      preference_id = str(int(result3[0]) + 1)
+    cursor.close()
+
+    print(owner_id, dog_id, preference_id)
+
+    # Email List
+    emails = []
+    cursor = g.conn.execute(
+        """
+        SELECT email FROM owner
+        """
+      )
+    
+    for result in cursor:
+      emails.append(result[0])
+    cursor.close()
+
+    # Check Input
+    name = request.form['name']
+    phone = request.form['phone']
+    email = request.form['email']
+    picture = request.form['picture']
+
+    dname = request.form['dname']
+    age = request.form['age']
+    weight = request.form['weight']
+    breed = request.form['breed']
+    play_intensity = request.form['play_intensity']
+    picture1 = request.form['picture1']
+    picture2 = request.form['picture2']
+
+    age_min = request.form['agemin']
+    age_max = request.form['agemax']
+    weight_min = request.form['wgtmin']
+    weight_max = request.form['wgtmax']
+    play_intensity_min = request.form['pimin']
+    play_intensity_max = request.form['pimax']
+    playdate_duration = request.form['playdate_duration']
+
+    if name == "":
+      flash('Please enter your name!')
+      return redirect('/EnterInfo')
+    elif email == "":
+      flash("Please enter your email!")
+      return redirect('/EnterInfo')
+    elif picture == "":
+      flash("Please add a picture of yourself!")
+      return redirect('/EnterInfo')
+    elif email in emails:
+      flash('Profile already exists for this email. Please log in with your email!')
+      return redirect('/EnterInfo')
+    elif dname == "":
+      flash("Please enter your dog's name!")
+      return redirect('/EnterInfo')
+    elif age == "":
+      flash("Please enter your dog's age!")
+      return redirect('/EnterInfo')
+    elif weight == "":
+      flash("Please enter your dog's weight!")
+      return redirect('/EnterInfo')
+    elif picture1 == "":
+      flash("Please add a picture in Picture (1)!")
+      return redirect('/EnterInfo')
+    elif int(age_max) < int(age_min):
+      flash("Age Max must be larger than Age Min!")
+      return redirect('/EnterInfo')
+    elif int(weight_max) < int(weight_min):
+      flash("Weight Max must be larger than Weight Min!")
+      return redirect('/EnterInfo')
+    elif int(play_intensity_max) < int(play_intensity_min):
+      flash(" Play Intensity Max must be larger than Play Intensity Min!")
+      return redirect('/EnterInfo')
+      
+    else:
+      # Update owner table with new owner record
+
+      q1 ="""
+        INSERT INTO
+          owner(owner_id, name, phone, email, picture)
+        VALUES
+          (%s, %s, %s, %s, %s);
+        """
+      g.conn.execute(q1, [owner_id, name, phone, email, picture])
+
+      # Update dog table with new dog record
+      q2 = """
+        INSERT INTO
+          dog(dog_id, name, age, weight, breed, play_intensity, picture1, picture2)
+        VALUES
+          (%s, %s, %s, %s, %s, %s, %s, %s);
+        """
+      g.conn.execute(q2, [dog_id, dname, age, weight, breed, play_intensity, picture1, picture2])
+
+      # Update dog_owned_by
+      q3 ="""
+        INSERT INTO
+          dog_owned_by(dog_id, owner_id)
+        VALUES
+          (%s, %s);
+        """
+      g.conn.execute(q3, [dog_id, owner_id])
+      
+      # Update preference table with new preference record
+      q4 = """
+        INSERT INTO
+          preference(preference_id, age_min, age_max, weight_min, weight_max, play_intensity_min, play_intensity_max,  playdate_duration)
+        VALUES
+          (%s, %s, %s, %s, %s, %s, %s, %s);
+        """
+      g.conn.execute(q4, [preference_id, age_min, age_max, weight_min, weight_max, play_intensity_min, play_intensity_max, playdate_duration])
+
+      # Update preference_set_by table with new preference_set_by record
+      q5 = """
+        INSERT INTO
+          preference_set_by(preference_id, owner_id)
+        VALUES
+          (%s, %s);
+        """
+      g.conn.execute(q5, [preference_id, owner_id])
+
+      session['person_id'] = owner_id
+      session['person_name'] = name
+      session['logged_in'] = True
+
+      return redirect('/')
+
+
+# Example of adding new data to the database
+@app.route('/add_dog', methods=['POST'])
+def add_dog():
+
+  if not session.get('logged_in'):
+      return render_template("Login.html")
+  else:
+
+    dog_id = 0
+    name = request.form['name']
+    age = request.form['age']
+    weight = request.form['weight']
+    breed = request.form['breed']
+    intensity = request.form['intensity']
+    picture1 = request.form['picture1']
+    picture2 = request.form['picture2']
     print(dog_id)
     
-    #Insert into dog table
-    q1 = """
-      INSERT INTO
-        dog(dog_id, name, age, weight, breed, play_intensity, picture1, picture2)
-      VALUES
-        (%s, %s, %s, %s, %s, %s, %s, %s);
-      """
-    g.conn.execute(q1, [dog_id, name, age, weight, breed, intensity, picture1, picture2])
-    print(dog_id)
-    #Insert into dog_owned_by table
-    q2 = """
-      INSERT INTO
-        dog_owned_by(dog_id, owner_id)
-      VALUES
-        (%s, %s);
-      """
-    g.conn.execute(q2, [dog_id, session['person_id']])
-    print(dog_id)
-    return redirect('/')
+
+    if name == "":
+      flash("Please enter your dog's name!")
+      return redirect('/')
+    elif age == "":
+      flash("Please enter your dog's age!")
+      return redirect('/')
+    elif weight == "":
+      flash("Please enter your dog's weight!")
+      return redirect('/')
+    elif intensity == "":
+      flash("Please enter your dog's play intensity!")
+      return redirect('/')
+    else:
+      print(dog_id)
+      # New dog_id
+      cursor = g.conn.execute(
+          """
+          SELECT dog_id FROM dog ORDER BY cast(dog_id as integer) DESC LIMIT 1
+          """
+        )
+      
+      for result2 in cursor:
+        dog_id = str(int(result2[0]) + 1)
+      cursor.close()
+      print(dog_id)
+      
+      #Insert into dog table
+      q1 = """
+        INSERT INTO
+          dog(dog_id, name, age, weight, breed, play_intensity, picture1, picture2)
+        VALUES
+          (%s, %s, %s, %s, %s, %s, %s, %s);
+        """
+      g.conn.execute(q1, [dog_id, name, age, weight, breed, intensity, picture1, picture2])
+      print(dog_id)
+      #Insert into dog_owned_by table
+      q2 = """
+        INSERT INTO
+          dog_owned_by(dog_id, owner_id)
+        VALUES
+          (%s, %s);
+        """
+      g.conn.execute(q2, [dog_id, session['person_id']])
+      print(dog_id)
+      return redirect('/')
 
 
 # Example of adding new data to the database
 @app.route('/add_message', methods=['POST'])
 def add_message():
 
-  emails = []
-  cursor = g.conn.execute(
-      """
-      SELECT email FROM owner
-      """
-    )
-  
-  for result in cursor:
-    emails.append(result[0])
-  cursor.close()
-
-  receiver=request.form['receiver']
-  message=request.form['message']
-
-  if receiver not in emails:
-    flash('That email is not on record!')
-    return redirect('/messages')
-  elif message == "":
-    flash("That message was empty!")
-    return redirect('/messages')
+  if not session.get('logged_in'):
+      return render_template("Login.html")
   else:
-    print("made it")
-    cursor = g.conn.execute(
-      """
-      SELECT owner.owner_id
-      FROM owner
-      WHERE owner.email = %(receiver)s;
-      """,
-      receiver=request.form['receiver']
-    )
 
-    df_receiver = pd.DataFrame(cursor.fetchall())
-    df_receiver.columns = cursor.keys()
-    receiver_id = df_receiver.owner_id.iloc[0]
+    emails = []
+    cursor = g.conn.execute(
+        """
+        SELECT email FROM owner
+        """
+      )
+    
+    for result in cursor:
+      emails.append(result[0])
     cursor.close()
 
-    g.conn.execute(
-      """
-      INSERT INTO
-        owner_contact(contact_id, sender, receiver, time, message)
-      VALUES
-        (%(contact_id)s, %(sender)s, %(receiver)s, %(time)s, %(message)s);
-      """,
-      contact_id=str(pd.Timestamp('now').strftime("%Y%m%d%H%M%S")),
-      sender=session['person_id'],
-      time=pd.Timestamp('now').strftime("%Y-%m-%d %H:%M:%S"),
-      receiver=receiver_id,
-      message=request.form['message']
-    )
-    
-    return redirect('/messages')
+    receiver=request.form['receiver']
+    message=request.form['message']
+
+    if receiver not in emails:
+      flash('That email is not on record!')
+      return redirect('/messages')
+    elif message == "":
+      flash("That message was empty!")
+      return redirect('/messages')
+    else:
+      print("made it")
+      cursor = g.conn.execute(
+        """
+        SELECT owner.owner_id
+        FROM owner
+        WHERE owner.email = %(receiver)s;
+        """,
+        receiver=request.form['receiver']
+      )
+
+      df_receiver = pd.DataFrame(cursor.fetchall())
+      df_receiver.columns = cursor.keys()
+      receiver_id = df_receiver.owner_id.iloc[0]
+      cursor.close()
+
+      g.conn.execute(
+        """
+        INSERT INTO
+          owner_contact(contact_id, sender, receiver, time, message)
+        VALUES
+          (%(contact_id)s, %(sender)s, %(receiver)s, %(time)s, %(message)s);
+        """,
+        contact_id=str(pd.Timestamp('now').strftime("%Y%m%d%H%M%S")),
+        sender=session['person_id'],
+        time=pd.Timestamp('now').strftime("%Y-%m-%d %H:%M:%S"),
+        receiver=receiver_id,
+        message=request.form['message']
+      )
+      
+      return redirect('/messages')
 
 
 @app.route('/add_playdate', methods=['POST'])
 def add_playdate():
 
-  emails = []
-  cursor = g.conn.execute(
-      """
-      SELECT email FROM owner
-      """
-    )
-  
-  for result in cursor:
-    emails.append(result[0])
-  cursor.close()
-
-
-  addresses = []
-  cursor = g.conn.execute(
-      """
-      SELECT address FROM location
-      """
-    )
-  
-  for result in cursor:
-    addresses.append(result[0])
-  cursor.close()
-
-  email=request.form['schedulee_email']
-  address = request.form['address']
-  time = request.form['time']
-
-  if email not in emails:
-    flash('That email is not on record!')
-    return redirect('/playdates')
-  elif address == "":
-    flash('Please add an address!')
-    return redirect('/playdates')
-  elif time == "":
-    flash('Please add a time!')
-    return redirect('/playdates')
-  elif address not in addresses:
-    flash('Please add an address from Locations!')
-    return redirect('/playdates')
+  if not session.get('logged_in'):
+      return render_template("Login.html")
   else:
+
+    emails = []
     cursor = g.conn.execute(
-      """
-      SELECT owner.owner_id
-      FROM owner
-      WHERE owner.email = %(schedulee_email)s;
-      """,
-      schedulee_email=request.form['schedulee_email']
-    )
-
-    df = pd.DataFrame(cursor.fetchall())
-    df.columns = cursor.keys()
-    schedulee_id = df.owner_id.iloc[0]
-    cursor.close()
-    print schedulee_id
-
-    cursor = g.conn.execute(
-      """
-      SELECT location.location_id
-      FROM location
-      WHERE location.address = %(address)s;
-      """,
-      address=request.form['address']
-    )
-
-    df = pd.DataFrame(cursor.fetchall())
-    df.columns = cursor.keys()
-    location_id = df.location_id.iloc[0]
-    cursor.close()
-    print location_id
-
-
-    g.conn.execute(
-      """
-      INSERT INTO
-        owner_meet(meet_id, location_id, scheduler, schedulee, time)
-      VALUES
-        (%(meet_id)s, %(location_id)s, %(scheduler)s, %(schedulee)s, %(time)s);
-      """,
-      meet_id=str(pd.Timestamp('now').strftime("%Y%m%d%H%M%S")),
-      location_id=location_id,
-      scheduler=session['person_id'],
-      schedulee=schedulee_id,
-      time=request.form['time']
-    )
+        """
+        SELECT email FROM owner
+        """
+      )
     
-    return redirect('/playdates')
+    for result in cursor:
+      emails.append(result[0])
+    cursor.close()
+
+
+    addresses = []
+    cursor = g.conn.execute(
+        """
+        SELECT address FROM location
+        """
+      )
+    
+    for result in cursor:
+      addresses.append(result[0])
+    cursor.close()
+
+    email=request.form['schedulee_email']
+    address = request.form['address']
+    time = request.form['time']
+
+    if email not in emails:
+      flash('That email is not on record!')
+      return redirect('/playdates')
+    elif address == "":
+      flash('Please add an address!')
+      return redirect('/playdates')
+    elif time == "":
+      flash('Please add a time!')
+      return redirect('/playdates')
+    elif address not in addresses:
+      flash('Please add an address from Locations!')
+      return redirect('/playdates')
+    else:
+      cursor = g.conn.execute(
+        """
+        SELECT owner.owner_id
+        FROM owner
+        WHERE owner.email = %(schedulee_email)s;
+        """,
+        schedulee_email=request.form['schedulee_email']
+      )
+
+      df = pd.DataFrame(cursor.fetchall())
+      df.columns = cursor.keys()
+      schedulee_id = df.owner_id.iloc[0]
+      cursor.close()
+      print schedulee_id
+
+      cursor = g.conn.execute(
+        """
+        SELECT location.location_id
+        FROM location
+        WHERE location.address = %(address)s;
+        """,
+        address=request.form['address']
+      )
+
+      df = pd.DataFrame(cursor.fetchall())
+      df.columns = cursor.keys()
+      location_id = df.location_id.iloc[0]
+      cursor.close()
+      print location_id
+
+
+      g.conn.execute(
+        """
+        INSERT INTO
+          owner_meet(meet_id, location_id, scheduler, schedulee, time)
+        VALUES
+          (%(meet_id)s, %(location_id)s, %(scheduler)s, %(schedulee)s, %(time)s);
+        """,
+        meet_id=str(pd.Timestamp('now').strftime("%Y%m%d%H%M%S")),
+        location_id=location_id,
+        scheduler=session['person_id'],
+        schedulee=schedulee_id,
+        time=request.form['time']
+      )
+      
+      return redirect('/playdates')
 
 
 @app.route('/add_review', methods=['POST'])
 def add_review():
 
-  emails = []
-  cursor = g.conn.execute(
-      """
-      SELECT email FROM owner
-      """
-    )
-  
-  for result in cursor:
-    emails.append(result[0])
-  cursor.close()
-
-  reviewee_email=request.form['reviewee_email']
-  positive = request.form['positive']
-
-  if reviewee_email not in emails:
-    flash('That email is not on record!')
-    return redirect('/reviews')
-  elif positive == "":
-    flash('Please let us know if the experience was positive or negative!')
-    return redirect('/reviews')
+  if not session.get('logged_in'):
+      return render_template("Login.html")
   else:
-    cursor = g.conn.execute(
-      """
-      SELECT owner.owner_id
-      FROM owner
-      WHERE owner.email = %(reviewee_email)s;
-      """,
-      reviewee_email=request.form['reviewee_email']
-    )
 
-    df_receiver = pd.DataFrame(cursor.fetchall())
-    df_receiver.columns = cursor.keys()
-    receiver_id = df_receiver.owner_id.iloc[0]
+    emails = []
+    cursor = g.conn.execute(
+        """
+        SELECT email FROM owner
+        """
+      )
+    
+    for result in cursor:
+      emails.append(result[0])
     cursor.close()
 
-    print receiver_id
+    reviewee_email=request.form['reviewee_email']
+    positive = request.form['positive']
 
-    g.conn.execute(
-      """
-      INSERT INTO
-        owner_review(review_id, reviewer, reviewee, positive, feedback)
-      VALUES
-        (%(review_id)s, %(reviewer)s, %(reviewee)s, %(positive)s, %(feedback)s);
-      """,
-      review_id=str(pd.Timestamp('now').strftime("%Y%m%d%H%M%S")),
-      reviewer=session['person_id'],
-      reviewee=receiver_id,
-      positive=request.form['positive'],
-      feedback=request.form['feedback']
-    )
-    
-    return redirect('/reviews')
+    if reviewee_email not in emails:
+      flash('That email is not on record!')
+      return redirect('/reviews')
+    elif positive == "":
+      flash('Please let us know if the experience was positive or negative!')
+      return redirect('/reviews')
+    else:
+      cursor = g.conn.execute(
+        """
+        SELECT owner.owner_id
+        FROM owner
+        WHERE owner.email = %(reviewee_email)s;
+        """,
+        reviewee_email=request.form['reviewee_email']
+      )
+
+      df_receiver = pd.DataFrame(cursor.fetchall())
+      df_receiver.columns = cursor.keys()
+      receiver_id = df_receiver.owner_id.iloc[0]
+      cursor.close()
+
+      print receiver_id
+
+      g.conn.execute(
+        """
+        INSERT INTO
+          owner_review(review_id, reviewer, reviewee, positive, feedback)
+        VALUES
+          (%(review_id)s, %(reviewer)s, %(reviewee)s, %(positive)s, %(feedback)s);
+        """,
+        review_id=str(pd.Timestamp('now').strftime("%Y%m%d%H%M%S")),
+        reviewer=session['person_id'],
+        reviewee=receiver_id,
+        positive=request.form['positive'],
+        feedback=request.form['feedback']
+      )
+      
+      return redirect('/reviews')
 
 
 
