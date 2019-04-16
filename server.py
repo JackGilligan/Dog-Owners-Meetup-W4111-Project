@@ -144,10 +144,7 @@ def index():
 #
 @app.route('/EnterInfo')
 def EnterInfo():
-    if not session.get('logged_in'):
-      return render_template("Login.html")
-    else:
-      return render_template("EnterInfo.html")
+    return render_template("EnterInfo.html")
 
 
 @app.route('/matches')
